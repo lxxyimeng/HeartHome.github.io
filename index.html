@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D心动小屋 - 打造专属于你的温馨3D小屋</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            overflow: hidden;
+            color: #333;
+        }
+        
+        /* 主页样式 */
+        #home-page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffcfe0 0%, #ff9a9e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.8s ease;
+        }
+        
+        .home-page-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .game-title {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+        }
+        
+        .game-subtitle {
+            font-size: 1.4rem;
+            color: white;
+            margin-bottom: 3.5rem;
+            display: flex;
+            align-items: center;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .heart-icon {
+            color: #ff4d6d;
+            margin-left: 10px;
+            font-size: 1.8rem;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            width: 320px;
+        }
+        
+        .menu-btn {
+            background-color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 18px 30px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #ff6b8b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 107, 139, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .menu-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 107, 139, 0.3);
+            color: #ff4d6d;
+        }
+        
+        .menu-btn:active {
+            transform: translateY(-2px);
+        }
+        
+        /* 游戏容器 */
+        #game-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        
+        #game-canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+        
+        /* 游戏UI控制面板 */
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+        
+        .game-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #7b68ee;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-btn:hover {
+            background-color: #7b68ee;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        /* 模态窗口样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: transform 0.4s ease;
+        }
+        
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            color: #7b68ee;
+            font-weight: 700;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .close-modal:hover {
+            color: #ff4d6d;
+        }
+        
+        /* 生成模型窗口样式 */
+        .model-creation-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #c5b3ff;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            background-color: #f9f7ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            background-color: #f0ecff;
+            border-color: #7b68ee;
+        }
+        
+        .upload-area i {
+            font-size: 3rem;
+            color: #7b68ee;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .upload-hint {
+            font-size: 0.9rem;
+            color: #999;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .action-btn {
+            padding: 12px 25px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .primary-btn {
+            background-color: #7b68ee;
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            background-color: #6a58d3;
+        }
+        
+        .secondary-btn {
+            background-color: #f0f0f0;
+            color: #666;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        /* 删除模式样式 */
+        .delete-mode .model-highlight {
+            outline: 3px solid #ff4d6d;
+            outline-offset: 5px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { outline-width: 3px; }
+            50% { outline-width: 5px; }
+        }
+        
+        /* 地图选择页面 */
+        #map-select-page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+            z-index: 50;
+        }
+        
+        .page-title {
+            font-size: 2.8rem;
+            color: white;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 40px;
+        }
+        
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            width: 90%;
+            max-width: 1000px;
+        }
+        
+        .map-card {
+            background-color: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .map-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .map-preview {
+            height: 180px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            color: #7b68ee;
+        }
+        
+        .map-info {
+            padding: 20px;
+        }
+        
+        .map-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .map-desc {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: #7b68ee;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background-color: #7b68ee;
+            color: white;
+        }
+        
+        /* 菜单面板 */
+        .menu-panel {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 20;
+            min-width: 200px;
+        }
+        
+        .menu-panel.active {
+            display: flex;
+        }
+        
+        .menu-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .menu-option:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .menu-option i {
+            color: #7b68ee;
+            width: 20px;
+        }
+        
+        /* 提示信息 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.4s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification i {
+            color: #7b68ee;
+            font-size: 1.2rem;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 3.2rem;
+            }
+            
+            .game-subtitle {
+                font-size: 1.1rem;
+                text-align: center;
+                flex-direction: column;
+            }
+            
+            .menu-buttons {
+                width: 280px;
+            }
+            
+            .game-btn {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主页 -->
+    <div id="home-page">
+        <h1 class="game-title">3D心动小屋</h1>
+        <div class="game-subtitle">
+            打造专属于你的温馨3D小屋
+            <i class="fas fa-heart heart-icon"></i>
+        </div>
+        
+        <div class="menu-buttons">
+            <button class="menu-btn" id="start-game-btn">开始游戏</button>
+            <button class="menu-btn" id="history-btn">历史小屋</button>
+            <button class="menu-btn" id="map-select-btn">地图选择</button>
+        </div>
+    </div>
+    
+    <!-- 地图选择页面 -->
+    <div id="map-select-page">
+        <button class="back-btn" id="back-to-home-btn">
+            <i class="fas fa-arrow-left"></i> 返回主页
+        </button>
+        <h2 class="page-title">选择您的地图</h2>
+        
+        <div class="map-grid">
+            <div class="map-card" id="warm-home-map">
+                <div class="map-preview">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="map-info">
+                    <h3 class="map-name">温馨之家</h3>
+                    <p class="map-desc">一个简单而温馨的小屋，拥有基础的家具和装饰，适合初次尝试。</p>
+                </div>
+            </div>
+            
+            <div class="map-card coming-soon">
+                <div class="map-preview">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="map-info">
+                    <h3 class="map-name">海滨别墅</h3>
+                    <p class="map-desc">即将推出 - 一个拥有海景的豪华别墅，拥有更多的空间和装饰选项。</p>
+                </div>
+            </div>
+            
+            <div class="map-card coming-soon">
+                <div class="map-preview">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="map-info">
+                    <h3 class="map-name">森林树屋</h3>
+                    <p class="map-desc">即将推出 - 一个建在树上的小屋，周围是茂密的森林，充满自然气息。</p>
+                </div>
+            </div>
+            
+            <div class="map-card coming-soon">
+                <div class="map-preview">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="map-info">
+                    <h3 class="map-name">现代公寓</h3>
+                    <p class="map-desc">即将推出 - 一个现代风格的公寓，拥有简约的设计和智能家居设备。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 游戏主容器 -->
+    <div id="game-container">
+        <!-- 3D画布 -->
+        <canvas id="game-canvas"></canvas>
+        
+        <!-- 游戏控制按钮 -->
+        <div class="game-ui">
+            <button class="game-btn" id="add-model-btn" title="加入模型">
+                <i class="fas fa-cube"></i>
+            </button>
+            <button class="game-btn" id="generate-model-btn" title="生成模型">
+                <i class="fas fa-magic"></i>
+            </button>
+            <button class="game-btn" id="delete-model-btn" title="删除模型">
+                <i class="fas fa-trash"></i>
+            </button>
+            <button class="game-btn" id="menu-btn" title="菜单">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- 菜单面板 -->
+        <div class="menu-panel" id="menu-panel">
+            <div class="menu-option" id="music-option">
+                <i class="fas fa-music"></i>
+                <span>背景音乐: <span id="music-status">开启</span></span>
+            </div>
+            <div class="menu-option" id="screenshot-option">
+                <i class="fas fa-camera"></i>
+                <span>截图</span>
+            </div>
+            <div class="menu-option" id="save-exit-option">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>保存并退出</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 生成模型模态窗口 -->
+    <div class="modal" id="generate-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">生成3D模型</h3>
+                <button class="close-modal" id="close-generate-modal">&times;</button>
+            </div>
+            
+            <div class="model-creation-section">
+                <div class="upload-area" id="image-upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p class="upload-text">点击或拖拽图片至此处上传</p>
+                    <p class="upload-hint">支持JPG、PNG、WEBP格式，建议图片分辨率不低于1024x1024</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="model-name">模型名称</label>
+                    <input type="text" id="model-name" placeholder="请输入模型名称" value="我的3D模型">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="model-description">模型描述 (可选)</label>
+                    <textarea id="model-description" rows="3" placeholder="请输入模型描述..."></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="action-btn secondary-btn" id="cancel-generate-btn">取消</button>
+                    <button class="action-btn primary-btn" id="confirm-generate-btn">开始生成3D模型</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 删除确认模态窗口 -->
+    <div class="modal" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">确认删除</h3>
+                <button class="close-modal" id="close-delete-modal">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <p>您确定要删除选中的模型吗？此操作不可撤销。</p>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="action-btn secondary-btn" id="cancel-delete-btn">取消</button>
+                <button class="action-btn primary-btn" id="confirm-delete-btn">确认删除</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 提示信息 -->
+    <div class="notification" id="notification">
+        <i class="fas fa-info-circle"></i>
+        <span id="notification-text">提示信息</span>
+    </div>
+    
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="model-file-input" accept=".glb,.gltf" style="display: none;">
+    <input type="file" id="image-file-input" accept=".jpg,.jpeg,.png,.webp" style="display: none;">
+
+    <script>
+        // 页面元素
+        const homePage = document.getElementById('home-page');
+        const gameContainer = document.getElementById('game-container');
+        const mapSelectPage = document.getElementById('map-select-page');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const mapSelectBtn = document.getElementById('map-select-btn');
+        const backToHomeBtn = document.getElementById('back-to-home-btn');
+        const warmHomeMap = document.getElementById('warm-home-map');
+        const addModelBtn = document.getElementById('add-model-btn');
+        const generateModelBtn = document.getElementById('generate-model-btn');
+        const deleteModelBtn = document.getElementById('delete-model-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const menuPanel = document.getElementById('menu-panel');
+        const generateModal = document.getElementById('generate-modal');
+        const deleteModal = document.getElementById('delete-modal');
+        const closeGenerateModal = document.getElementById('close-generate-modal');
+        const closeDeleteModal = document.getElementById('close-delete-modal');
+        const cancelGenerateBtn = document.getElementById('cancel-generate-btn');
+        const confirmGenerateBtn = document.getElementById('confirm-generate-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const modelFileInput = document.getElementById('model-file-input');
+        const imageFileInput = document.getElementById('image-file-input');
+        const imageUploadArea = document.getElementById('image-upload-area');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notification-text');
+        
+        // 3D场景变量
+        let scene, camera, renderer, controls;
+        let roomObjects = [];
+        let addedModels = [];
+        let isDeleteMode = false;
+        let selectedModel = null;
+        
+        // 页面切换功能
+        startGameBtn.addEventListener('click', () => {
+            homePage.classList.add('home-page-hidden');
+            setTimeout(() => {
+                homePage.style.display = 'none';
+                gameContainer.style.display = 'block';
+                initGame();
+            }, 800);
+        });
+        
+        mapSelectBtn.addEventListener('click', () => {
+            homePage.style.display = 'none';
+            mapSelectPage.style.display = 'flex';
+        });
+        
+        backToHomeBtn.addEventListener('click', () => {
+            mapSelectPage.style.display = 'none';
+            homePage.style.display = 'flex';
+            homePage.classList.remove('home-page-hidden');
+        });
+        
+        warmHomeMap.addEventListener('click', () => {
+            showNotification('已选择温馨之家地图，开始游戏...');
+            mapSelectPage.style.display = 'none';
+            homePage.classList.add('home-page-hidden');
+            setTimeout(() => {
+                homePage.style.display = 'none';
+                gameContainer.style.display = 'block';
+                initGame();
+            }, 800);
+        });
+        
+        // 游戏控制按钮功能
+        addModelBtn.addEventListener('click', () => {
+            modelFileInput.click();
+        });
+        
+        generateModelBtn.addEventListener('click', () => {
+            generateModal.classList.add('active');
+        });
+        
+        deleteModelBtn.addEventListener('click', () => {
+            if (addedModels.length === 0) {
+                showNotification('当前没有可删除的模型');
+                return;
+            }
+            
+            toggleDeleteMode();
+        });
+        
+        menuBtn.addEventListener('click', () => {
+            menuPanel.classList.toggle('active');
+        });
+        
+        // 菜单选项功能
+        document.getElementById('music-option').addEventListener('click', () => {
+            const musicStatus = document.getElementById('music-status');
+            musicStatus.textContent = musicStatus.textContent === '开启' ? '关闭' : '开启';
+            showNotification(`背景音乐已${musicStatus.textContent}`);
+        });
+        
+        document.getElementById('screenshot-option').addEventListener('click', () => {
+            showNotification('截图已保存到下载文件夹');
+        });
+        
+        document.getElementById('save-exit-option').addEventListener('click', () => {
+            showNotification('游戏进度已保存');
+            setTimeout(() => {
+                gameContainer.style.display = 'none';
+                homePage.style.display = 'flex';
+                homePage.classList.remove('home-page-hidden');
+            }, 1000);
+        });
+        
+        // 模态窗口控制
+        closeGenerateModal.addEventListener('click', () => {
+            generateModal.classList.remove('active');
+        });
+        
+        cancelGenerateBtn.addEventListener('click', () => {
+            generateModal.classList.remove('active');
+        });
+        
+        confirmGenerateBtn.addEventListener('click', () => {
+            // 这里应该连接Tripo AI的API
+            showNotification('3D模型生成请求已发送，请稍候...');
+            generateModal.classList.remove('active');
+            
+            // 模拟3秒后生成完成
+            setTimeout(() => {
+                showNotification('3D模型生成完成！已添加到场景中');
+                // 这里应该添加生成的模型到场景
+            }, 3000);
+        });
+        
+        closeDeleteModal.addEventListener('click', () => {
+            deleteModal.classList.remove('active');
+        });
+        
+        cancelDeleteBtn.addEventListener('click', () => {
+            deleteModal.classList.remove('active');
+        });
+        
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (selectedModel) {
+                removeModelFromScene(selectedModel);
+                showNotification('模型已删除');
+            }
+            deleteModal.classList.remove('active');
+            toggleDeleteMode();
+        });
+        
+        // 文件上传处理
+        modelFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                showNotification(`已选择模型文件: ${file.name}`);
+                // 这里应该添加GLB/GLTF模型加载逻辑
+                addPlaceholderModel();
+            }
+        });
+        
+        imageUploadArea.addEventListener('click', () => {
+            imageFileInput.click();
+        });
+        
+        imageFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                showNotification(`已选择图片: ${file.name}`);
+                // 这里可以添加图片预览功能
+            }
+        });
+        
+        // 显示提示信息
+        function showNotification(message) {
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 切换删除模式
+        function toggleDeleteMode() {
+            isDeleteMode = !isDeleteMode;
+            
+            if (isDeleteMode) {
+                deleteModelBtn.style.backgroundColor = '#ff4d6d';
+                deleteModelBtn.style.color = 'white';
+                showNotification('删除模式已激活，点击要删除的模型');
+                
+                // 为所有已添加的模型添加高亮效果
+                addedModels.forEach(model => {
+                    model.element.classList.add('model-highlight');
+                    model.element.addEventListener('click', handleModelSelect);
+                });
+            } else {
+                deleteModelBtn.style.backgroundColor = '';
+                deleteModelBtn.style.color = '';
+                
+                // 移除所有高亮效果
+                addedModels.forEach(model => {
+                    model.element.classList.remove('model-highlight');
+                    model.element.removeEventListener('click', handleModelSelect);
+                });
+                
+                selectedModel = null;
+            }
+        }
+        
+        // 处理模型选择
+        function handleModelSelect(event) {
+            event.stopPropagation();
+            selectedModel = this;
+            deleteModal.classList.add('active');
+        }
+        
+        // 从场景中移除模型
+        function removeModelFromScene(modelElement) {
+            // 从3D场景中移除对应的3D对象
+            const modelIndex = addedModels.findIndex(m => m.element === modelElement);
+            if (modelIndex !== -1) {
+                if (scene && addedModels[modelIndex].object3D) {
+                    scene.remove(addedModels[modelIndex].object3D);
+                }
+                addedModels.splice(modelIndex, 1);
+            }
+            
+            // 从DOM中移除
+            modelElement.remove();
+        }
+        
+        // 添加占位模型
+        function addPlaceholderModel() {
+            // 创建模型元素
+            const modelElement = document.createElement('div');
+            modelElement.className = 'model-item';
+            modelElement.style.position = 'absolute';
+            modelElement.style.width = '100px';
+            modelElement.style.height = '100px';
+            modelElement.style.backgroundColor = 'rgba(123, 104, 238, 0.5)';
+            modelElement.style.border = '2px dashed #7b68ee';
+            modelElement.style.borderRadius = '10px';
+            modelElement.style.display = 'flex';
+            modelElement.style.justifyContent = 'center';
+            modelElement.style.alignItems = 'center';
+            modelElement.style.color = 'white';
+            modelElement.style.fontSize = '2rem';
+            modelElement.style.cursor = 'move';
+            modelElement.style.left = `${Math.random() * 70 + 15}%`;
+            modelElement.style.top = `${Math.random() * 60 + 20}%`;
+            modelElement.innerHTML = '<i class="fas fa-cube"></i>';
+            
+            // 添加到游戏容器
+            gameContainer.appendChild(modelElement);
+            
+            // 添加到模型列表
+            addedModels.push({
+                element: modelElement,
+                object3D: null // 这里应该存储Three.js对象
+            });
+            
+            // 使模型可拖动
+            makeDraggable(modelElement);
+            
+            showNotification('模型已添加到场景中');
+        }
+        
+        // 使元素可拖动
+        function makeDraggable(element) {
+            let isDragging = false;
+            let offsetX, offsetY;
+            
+            element.addEventListener('mousedown', startDrag);
+            
+            function startDrag(e) {
+                if (isDeleteMode) return; // 删除模式下不拖动
+                
+                isDragging = true;
+                offsetX = e.clientX - element.getBoundingClientRect().left;
+                offsetY = e.clientY - element.getBoundingClientRect().top;
+                
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', stopDrag);
+                
+                e.preventDefault();
+            }
+            
+            function drag(e) {
+                if (!isDragging) return;
+                
+                element.style.left = `${(e.clientX - offsetX) / window.innerWidth * 100}%`;
+                element.style.top = `${(e.clientY - offsetY) / window.innerWidth * 100}%`;
+            }
+            
+            function stopDrag() {
+                isDragging = false;
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+            }
+        }
+        
+        // 初始化游戏
+        function initGame() {
+            // 初始化Three.js场景
+            initThreeJS();
+            
+            // 显示提示
+            showNotification('温馨小屋已加载，使用鼠标拖动可以旋转视角，滚动鼠标可以缩放');
+        }
+        
+        // 初始化Three.js
+        function initThreeJS() {
+            // 获取画布元素
+            const canvas = document.getElementById('game-canvas');
+            
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+            
+            // 创建相机
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+            
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // 添加轨道控制器
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // 添加光源
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.camera.left = -20;
+            directionalLight.shadow.camera.right = 20;
+            directionalLight.shadow.camera.top = 20;
+            directionalLight.shadow.camera.bottom = -20;
+            scene.add(directionalLight);
+            
+            // 创建房间
+            createRoom();
+            
+            // 添加家具
+            addFurniture();
+            
+            // 处理窗口大小变化
+            window.addEventListener('resize', onWindowResize);
+            
+            // 开始动画循环
+            animate();
+        }
+        
+        // 创建房间
+        function createRoom() {
+            // 地板
+            const floorGeometry = new THREE.PlaneGeometry(20, 20);
+            const floorMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x8B4513, // 棕色木地板
+                roughness: 0.8
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+            
+            // 墙壁
+            const wallMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xF5F5DC, // 米色墙壁
+                roughness: 0.7
+            });
+            
+            // 后墙
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), wallMaterial);
+            backWall.position.z = -10;
+            backWall.position.y = 5;
+            backWall.receiveShadow = true;
+            scene.add(backWall);
+            
+            // 左墙
+            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), wallMaterial);
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.position.x = -10;
+            leftWall.position.y = 5;
+            leftWall.receiveShadow = true;
+            scene.add(leftWall);
+            
+            // 右墙
+            const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(20, 10), wallMaterial);
+            rightWall.rotation.y = -Math.PI / 2;
+            rightWall.position.x = 10;
+            rightWall.position.y = 5;
+            rightWall.receiveShadow = true;
+            scene.add(rightWall);
+            
+            // 前墙（有开口）
+            const frontWallLeft = new THREE.Mesh(new THREE.PlaneGeometry(8, 10), wallMaterial);
+            frontWallLeft.rotation.y = Math.PI;
+            frontWallLeft.position.z = 10;
+            frontWallLeft.position.x = -6;
+            frontWallLeft.position.y = 5;
+            frontWallLeft.receiveShadow = true;
+            scene.add(frontWallLeft);
+            
+            const frontWallRight = new THREE.Mesh(new THREE.PlaneGeometry(8, 10), wallMaterial);
+            frontWallRight.rotation.y = Math.PI;
+            frontWallRight.position.z = 10;
+            frontWallRight.position.x = 6;
+            frontWallRight.position.y = 5;
+            frontWallRight.receiveShadow = true;
+            scene.add(frontWallRight);
+            
+            // 天花板
+            const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), wallMaterial);
+            ceiling.rotation.x = Math.PI / 2;
+            ceiling.position.y = 10;
+            ceiling.receiveShadow = true;
+            scene.add(ceiling);
+            
+            // 存储房间对象以便后续使用
+            roomObjects.push(floor, backWall, leftWall, rightWall, frontWallLeft, frontWallRight, ceiling);
+        }
+        
+        // 添加家具
+        function addFurniture() {
+            // 吊灯
+            const lampGeometry = new THREE.CylinderGeometry(0.2, 0.5, 0.5, 8);
+            const lampMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xFFD700, // 金色
+                metalness: 0.8,
+                roughness: 0.2
+            });
+            const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
+            lamp.position.set(0, 9.5, 0);
+            lamp.castShadow = true;
+            scene.add(lamp);
+            
+            // 桌子
+            const tableTopGeometry = new THREE.BoxGeometry(4, 0.3, 2);
+            const tableLegGeometry = new THREE.BoxGeometry(0.3, 2, 0.3);
+            const tableMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x8B4513, // 棕色
+                roughness: 0.8
+            });
+            
+            const tableTop = new THREE.Mesh(tableTopGeometry, tableMaterial);
+            tableTop.position.set(0, 2, 0);
+            tableTop.castShadow = true;
+            tableTop.receiveShadow = true;
+            scene.add(tableTop);
+            
+            // 桌子腿
+            for (let i = 0; i < 4; i++) {
+                const x = i % 2 === 0 ? -1.8 : 1.8;
+                const z = i < 2 ? -0.8 : 0.8;
+                
+                const tableLeg = new THREE.Mesh(tableLegGeometry, tableMaterial);
+                tableLeg.position.set(x, 1, z);
+                tableLeg.castShadow = true;
+                scene.add(tableLeg);
+            }
+            
+            // 沙发
+            const sofaBaseGeometry = new THREE.BoxGeometry(3, 1, 1.5);
+            const sofaBackGeometry = new THREE.BoxGeometry(3, 1.5, 0.3);
+            const sofaMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x8A2BE2, // 紫色
+                roughness: 0.9
+            });
+            
+            const sofaBase = new THREE.Mesh(sofaBaseGeometry, sofaMaterial);
+            sofaBase.position.set(-5, 0.5, 5);
+            sofaBase.castShadow = true;
+            sofaBase.receiveShadow = true;
+            scene.add(sofaBase);
+            
+            const sofaBack = new THREE.Mesh(sofaBackGeometry, sofaMaterial);
+            sofaBack.position.set(-5, 1.25, 5.6);
+            sofaBack.castShadow = true;
+            scene.add(sofaBack);
+            
+            // 存储家具对象
+            roomObjects.push(lamp, tableTop, sofaBase, sofaBack);
+        }
+        
+        // 窗口大小变化处理
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // 点击游戏区域外关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!menuBtn.contains(e.target) && !menuPanel.contains(e.target)) {
+                menuPanel.classList.remove('active');
+            }
+        });
+        
+        // 按X键退出删除模式
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.key === 'x' || e.key === 'X') {
+                if (isDeleteMode) {
+                    toggleDeleteMode();
+                    showNotification('已退出删除模式');
+                }
+            }
+        });
+        
+        // 初始化提示
+        showNotification('欢迎来到3D心动小屋！点击"开始游戏"进入您的温馨小屋');
+    </script>
+</body>
+</html>
