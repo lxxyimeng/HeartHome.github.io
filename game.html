@@ -493,6 +493,8 @@
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 renderer.physicallyCorrectLights = true;
+                renderer.outputEncoding = THREE.sRGBEncoding; // 添加sRGB编码
+                renderer.gammaFactor = 2.2; // 添加伽马校正
                 
                 // 创建控制器
                 try {
@@ -675,25 +677,29 @@
             };
         }
         
-        // 添加光照
+        // 添加光照 - 修改光照参数以减少颜色变淡
         function addLighting() {
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            // 减少环境光强度，从0.5改为0.3
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
             scene.add(ambientLight);
             lights.push(ambientLight);
             
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            // 调整主光源强度
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
             directionalLight.position.set(10, 20, 5);
             directionalLight.castShadow = true;
             scene.add(directionalLight);
             lights.push(directionalLight);
             
-            const pointLight = new THREE.PointLight(0xfff8e7, 0.6, 20);
+            // 调整点光源
+            const pointLight = new THREE.PointLight(0xfff8e7, 0.4, 20);
             pointLight.position.set(0, 8, 0);
             pointLight.castShadow = true;
             scene.add(pointLight);
             lights.push(pointLight);
             
-            const fillLight = new THREE.DirectionalLight(0xfff0e0, 0.3);
+            // 调整填充光
+            const fillLight = new THREE.DirectionalLight(0xfff0e0, 0.2);
             fillLight.position.set(-10, 10, -5);
             scene.add(fillLight);
             lights.push(fillLight);
@@ -1156,7 +1162,8 @@
             showNotification(`已选择文件: ${file.name}`);
         }
         
-        // 加载3D模型文件
+        // 加载3D模型文件 - 修改以保持模型原始颜色
+        // 加载3D模型文件 - 修改以保持模型原始颜色
         function loadModelFile(file) {
             if (!GLTFLoader) {
                 showNotification('模型加载器未初始化，请重新刷新页面', 5000);
@@ -1172,18 +1179,37 @@
                     GLTFLoader.parse(contents, '', function (gltf) {
                         const model = gltf.scene;
                         model.position.set(0, 2, 0);
+                        
+                        // 计算模型尺寸并缩放
                         const box = new THREE.Box3().setFromObject(model);
                         const size = box.getSize(new THREE.Vector3());
                         const maxDim = Math.max(size.x, size.y, size.z);
                         const scale = 1.5 / maxDim;
                         model.scale.setScalar(scale);
+                        
+                        // 遍历模型，修改材质设置以保持原始颜色
                         model.traverse(function (node) {
                             if (node.isMesh) {
                                 node.castShadow = true;
                                 node.receiveShadow = true;
+                                
+                                // 修复材质颜色变淡的问题
+                                if (node.material) {
+                                    // 如果是数组材质
+                                    if (Array.isArray(node.material)) {
+                                        node.material.forEach(material => {
+                                            fixMaterialColor(material);
+                                        });
+                                    } else {
+                                        // 单个材质
+                                        fixMaterialColor(node.material);
+                                    }
+                                }
                             }
                         });
+                        
                         scene.add(model);
+                        
                         const modelInfo = {
                             model: model,
                             name: file.name,
@@ -1191,13 +1217,16 @@
                             importTime: new Date(),
                             size: file.size
                         };
+                        
                         importedModels.push(modelInfo);
                         updateModelsList();
                         updateSelectModelsList();
                         hideLoading();
+                        
                         successMessage.textContent = `模型 "${modelInfo.displayName}" 已成功导入！`;
                         successModal.classList.add('active');
-                        showNotification(`模型 "${modelInfo.displayName}" 加载成功！`);
+                        showNotification(`模型 "${modelInfo.displayName}" 加载成功！颜色已优化`);
+                        
                     }, function (error) {
                         hideLoading();
                         console.error('模型加载失败:', error);
@@ -1209,12 +1238,45 @@
                     showNotification('模型文件格式错误，请选择有效的GLB/GLTF文件', 5000);
                 }
             };
+            
             reader.onerror = function (error) {
                 hideLoading();
                 console.error('文件读取失败:', error);
                 showNotification('文件读取失败，请重试', 5000);
             };
+            
             reader.readAsArrayBuffer(file);
+        }
+        
+        // 修复材质颜色，防止颜色变淡
+        function fixMaterialColor(material) {
+            if (!material) return;
+            
+            // 保存原始颜色
+            const originalColor = material.color ? material.color.clone() : new THREE.Color(0xffffff);
+            
+            // 对于StandardMaterial，调整参数以保持颜色
+            if (material.isMeshStandardMaterial || material.isMeshPhongMaterial) {
+                // 减少金属感和粗糙度，使颜色更鲜艳
+                material.metalness = 0.1;
+                material.roughness = 0.8;
+                
+                // 增加颜色强度
+                material.color = originalColor;
+                
+                // 调整自发光，增加颜色饱和度
+                material.emissive = originalColor.clone().multiplyScalar(0.1);
+                material.emissiveIntensity = 0.1;
+                
+                // 禁用透明度（如果不需要）
+                if (material.transparent) {
+                    material.transparent = false;
+                    material.opacity = 1.0;
+                }
+            }
+            
+            // 确保材质不会太暗
+            material.needsUpdate = true;
         }
         
         // 更新模型列表（用于删除）
