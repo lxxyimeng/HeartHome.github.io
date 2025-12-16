@@ -382,7 +382,7 @@
         .menu-panel {
             position: fixed;
             top: 80px;
-            right: 20px;
+            right: 80px;
             background-color: white;
             border-radius: 15px;
             padding: 15px;
@@ -1223,7 +1223,7 @@
             }
         }
         
-        // 备用：手动控制相机
+        // 手动控制相机（备用方案）
         function createManualControls() {
             let isMouseDown = false;
             let mouseX = 0;
@@ -1254,16 +1254,12 @@
                 camera.position.multiplyScalar(1 - e.deltaY * 0.001);
             });
             
-            function updateCamera() {
+            const originalAnimate = animate;
+            animate = function() {
                 camera.position.x = 10 + Math.sin(targetX) * 10;
                 camera.position.z = 10 + Math.cos(targetX) * 10;
                 camera.position.y = 8 + targetY * 5;
                 camera.lookAt(0, 0, 0);
-            }
-            
-            const originalAnimate = animate;
-            animate = function() {
-                updateCamera();
                 originalAnimate();
             };
         }
@@ -1293,7 +1289,6 @@
         }
         
         // 创建房间
-        // 创建房间
         function createRoom() {
             const roomSize = 20;
             const wallHeight = 8;
@@ -1310,10 +1305,10 @@
             // 设置纹理重复和平铺
             woodTexture.wrapS = THREE.RepeatWrapping;
             woodTexture.wrapT = THREE.RepeatWrapping;
-            woodTexture.repeat.set(roomSize/2, roomSize/2); // 根据房间大小调整纹理重复次数
+            woodTexture.repeat.set(roomSize/2, roomSize/2);
             
             const floorMaterial = new THREE.MeshStandardMaterial({ 
-                map: woodTexture, // 使用木纹贴图
+                map: woodTexture,
                 roughness: 0.8,
                 metalness: 0.2
             });
@@ -1851,6 +1846,110 @@
             window.location.href = 'index.html';
         }
         
+        // ==== 修复：确保菜单按钮可点击 ====
+        
+        // 修复菜单面板的CSS
+        function fixMenuCSS() {
+            const style = document.createElement('style');
+            style.textContent = `
+                #menu-btn {
+                    cursor: pointer !important;
+                    pointer-events: all !important;
+                    z-index: 1000 !important;
+                    position: relative !important;
+                }
+                
+                #menu-panel {
+                    z-index: 999 !important;
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: all 0.3s ease;
+                }
+                
+                #menu-panel.active {
+                    pointer-events: all;
+                    opacity: 1;
+                }
+                
+                .game-ui {
+                    z-index: 1000 !important;
+                }
+            `;
+            document.head.appendChild(style);
+            console.log("菜单CSS修复已应用");
+        }
+        
+        // 重新绑定菜单按钮事件
+        function rebindMenuButton() {
+            console.log("重新绑定菜单按钮事件...");
+            
+            // 确保菜单面板初始状态
+            if (menuPanel) {
+                menuPanel.classList.remove('active');
+                isMenuOpen = false;
+            }
+            
+            // 移除现有的事件监听器
+            if (menuBtn) {
+                const newMenuBtn = menuBtn.cloneNode(true);
+                menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
+                const newMenuBtnRef = document.getElementById('menu-btn');
+                
+                // 重新绑定事件
+                newMenuBtnRef.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("菜单按钮被点击");
+                    
+                    isMenuOpen = !isMenuOpen;
+                    if (isMenuOpen) {
+                        menuPanel.classList.add('active');
+                        console.log("菜单打开");
+                    } else {
+                        menuPanel.classList.remove('active');
+                        console.log("菜单关闭");
+                    }
+                });
+                
+                // 添加触摸支持
+                newMenuBtnRef.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    this.click();
+                });
+                
+                console.log("菜单按钮重新绑定成功");
+            } else {
+                console.error("菜单按钮未找到");
+            }
+        }
+        
+        // 添加紧急修复按钮
+        function addEmergencyFixButton() {
+            const emergencyBtn = document.createElement('button');
+            emergencyBtn.textContent = '修复菜单';
+            emergencyBtn.style.position = 'fixed';
+            emergencyBtn.style.top = '300px';
+            emergencyBtn.style.right = '10px';
+            emergencyBtn.style.zIndex = '10000';
+            emergencyBtn.style.background = '#ff6b6b';
+            emergencyBtn.style.color = 'white';
+            emergencyBtn.style.padding = '10px 15px';
+            emergencyBtn.style.border = 'none';
+            emergencyBtn.style.borderRadius = '5px';
+            emergencyBtn.style.cursor = 'pointer';
+            emergencyBtn.style.fontWeight = 'bold';
+            
+            emergencyBtn.addEventListener('click', function() {
+                rebindMenuButton();
+                showNotification('菜单按钮已修复');
+            });
+            
+            document.body.appendChild(emergencyBtn);
+            console.log("紧急修复按钮已添加");
+        }
+        
+        // ==== 修复结束 ====
+        
         // 页面事件监听
         backBtn.addEventListener('click', function() {
             window.location.href = 'index.html';
@@ -1871,14 +1970,15 @@
             modelsListModal.classList.add('active');
         });
         
-        menuBtn.addEventListener('click', function() {
-            isMenuOpen = !isMenuOpen;
-            if (isMenuOpen) {
-                menuPanel.classList.add('active');
-            } else {
-                menuPanel.classList.remove('active');
-            }
-        });
+        // 注意：这里移除了原来的菜单按钮事件绑定，改用修复后的版本
+        // menuBtn.addEventListener('click', function() {
+        //     isMenuOpen = !isMenuOpen;
+        //     if (isMenuOpen) {
+        //         menuPanel.classList.add('active');
+        //     } else {
+        //         menuPanel.classList.remove('active');
+        //     }
+        // });
         
         toggleLightsBtn.addEventListener('click', toggleLights);
         
@@ -2034,7 +2134,17 @@
         
         // 页面加载完成后初始化游戏
         window.addEventListener('DOMContentLoaded', function() {
+            console.log("DOMContentLoaded - 开始初始化");
+            
+            // 修复CSS
+            fixMenuCSS();
+            
+            // 添加紧急修复按钮
+            addEmergencyFixButton();
+            
+            // 加载保存的场景
             loadSavedScenes();
+            
             showLoading('正在初始化3D场景...');
             updateProgress(0);
             timeEstimate.textContent = '预计时间: 2秒';
@@ -2061,6 +2171,9 @@
                             gameContainer.style.display = 'block';
                             showNotification('温馨小屋已加载！使用鼠标拖拽旋转视角，滚轮缩放，键盘WSADUY控制移动');
                             keyboardControlsDiv.style.display = 'block';
+                            
+                            // 在Three.js初始化后重新绑定菜单按钮
+                            setTimeout(rebindMenuButton, 100);
                         } else {
                             loadingText.textContent = '加载失败，请刷新重试';
                             setTimeout(function() {
@@ -2077,7 +2190,6 @@
         function handleKeyboardInput() {
             if (!camera) return;
             
-            const moveSpeed = 0.2;
             const moveVector = new THREE.Vector3(0, 0, 0);
             
             if (keyboardControls.w) moveVector.y += moveSpeed;
@@ -2122,478 +2234,23 @@
             showNotification(isVisible ? '灯光已关闭' : '灯光已开启');
         }
         
-        // 格式化文件大小
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // 移除文件扩展名
-        function removeFileExtension(filename) {
-            return filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-        }
-        
-        // 处理模型文件选择
-        function handleModelFileSelect(file) {
-            if (!file) return;
-            selectedFile = file;
-            modelFileName.textContent = `文件名: ${file.name}`;
-            modelFileSize.textContent = `文件大小: ${formatFileSize(file.size)}`;
-            modelFileInfo.classList.add('show');
-            showNotification(`已选择文件: ${file.name}`);
-        }
-        
-        // 加载3D模型文件
-        function loadModelFile(file) {
-            if (!GLTFLoader) {
-                showNotification('模型加载器未初始化，请重新刷新页面', 5000);
-                return;
-            }
+        // 页面完全加载后的最终初始化
+        window.addEventListener('load', function() {
+            console.log("页面完全加载，进行最终初始化");
             
-            showLoading('正在加载3D模型...');
-            
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                try {
-                    const contents = event.target.result;
-                    GLTFLoader.parse(contents, '', function (gltf) {
-                        const model = gltf.scene;
-                        
-                        // 设置模型默认位置（桌子上）
-                        model.position.set(0, 2, 0);
-                        
-                        // 调整模型大小（自适应）
-                        const box = new THREE.Box3().setFromObject(model);
-                        const size = box.getSize(new THREE.Vector3());
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 1.5 / maxDim; // 缩放至合适大小
-                        model.scale.setScalar(scale);
-                        
-                        // 启用阴影
-                        model.traverse(function (node) {
-                            if (node.isMesh) {
-                                node.castShadow = true;
-                                node.receiveShadow = true;
-                            }
-                        });
-                        
-                        // 添加到场景
-                        scene.add(model);
-                        
-                        // 存储模型信息
-                        const modelInfo = {
-                            model: model,
-                            name: file.name,
-                            displayName: removeFileExtension(file.name),
-                            importTime: new Date(),
-                            size: file.size
-                        };
-                        
-                        importedModels.push(modelInfo);
-                        
-                        // 更新模型列表
-                        updateModelsList();
-                        
-                        hideLoading();
-                        successMessage.textContent = `模型 "${modelInfo.displayName}" 已成功导入！`;
-                        successModal.classList.add('active');
-                        
-                        showNotification(`模型 "${modelInfo.displayName}" 加载成功！`);
-                        console.log(`模型 ${modelInfo.displayName} 加载完成`);
-                    }, function (error) {
-                        hideLoading();
-                        console.error('模型加载失败:', error);
-                        showNotification(`模型加载失败: ${error.message || '未知错误'}`, 5000);
-                    });
-                } catch (error) {
-                    hideLoading();
-                    console.error('模型解析失败:', error);
-                    showNotification('模型文件格式错误，请选择有效的GLB/GLTF文件', 5000);
+            // 最终检查
+            setTimeout(function() {
+                console.log("=== 最终检查 ===");
+                console.log("菜单按钮:", menuBtn ? "找到" : "未找到");
+                console.log("菜单面板:", menuPanel ? "找到" : "未找到");
+                console.log("==================");
+                
+                // 如果菜单按钮仍然无效，强制修复
+                if (menuBtn && menuPanel) {
+                    menuBtn.style.border = '2px solid #00ff00';
+                    menuBtn.style.boxShadow = '0 0 10px #00ff00';
                 }
-            };
-            
-            reader.onerror = function (error) {
-                hideLoading();
-                console.error('文件读取失败:', error);
-                showNotification('文件读取失败，请重试', 5000);
-            };
-            
-            reader.onprogress = function (event) {
-                if (event.lengthComputable) {
-                    const percentLoaded = Math.round((event.loaded / event.total) * 100);
-                    loadingText.textContent = `正在加载模型: ${percentLoaded}%`;
-                }
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-        
-        // 更新模型列表
-        function updateModelsList() {
-            modelsListContainer.innerHTML = '';
-            
-            if (importedModels.length === 0) {
-                noModelsMessage.style.display = 'block';
-                modelsListContainer.appendChild(noModelsMessage);
-                return;
-            }
-            
-            noModelsMessage.style.display = 'none';
-            
-            // 添加每个模型
-            importedModels.forEach((modelInfo, index) => {
-                const modelItem = document.createElement('div');
-                modelItem.className = 'model-item';
-                modelItem.dataset.index = index;
-                
-                const time = new Date(modelInfo.importTime);
-                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-                
-                modelItem.innerHTML = `
-                    <div class="model-info">
-                        <div class="model-name">${modelInfo.displayName}</div>
-                        <div class="model-time">导入时间: ${timeStr}</div>
-                    </div>
-                    <button class="delete-model-btn" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                        删除
-                    </button>
-                `;
-                
-                modelsListContainer.appendChild(modelItem);
-            });
-            
-            // 为删除按钮添加事件监听
-            document.querySelectorAll('.delete-model-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const index = parseInt(this.dataset.index);
-                    confirmDeleteModel(index);
-                });
-            });
-        }
-        
-        // 确认删除模型
-        function confirmDeleteModel(index) {
-            if (index < 0 || index >= importedModels.length) return;
-            
-            const modelInfo = importedModels[index];
-            modelToDeleteIndex = index;
-            modelNameToDelete.textContent = modelInfo.displayName;
-            
-            // 关闭模型列表窗口，打开确认删除窗口
-            modelsListModal.classList.remove('active');
-            confirmDeleteModal.classList.add('active');
-        }
-        
-        // 执行删除模型
-        function deleteModel() {
-            if (modelToDeleteIndex < 0 || modelToDeleteIndex >= importedModels.length) {
-                showNotification('删除失败: 模型不存在', 3000);
-                return;
-            }
-            
-            const modelInfo = importedModels[modelToDeleteIndex];
-            
-            // 从场景中移除模型
-            scene.remove(modelInfo.model);
-            
-            // 从数组中移除
-            importedModels.splice(modelToDeleteIndex, 1);
-            
-            // 更新模型列表
-            updateModelsList();
-            
-            // 关闭确认删除窗口
-            confirmDeleteModal.classList.remove('active');
-            
-            // 显示成功消息
-            showNotification(`模型 "${modelInfo.displayName}" 已删除`, 3000);
-            
-            console.log(`模型 ${modelInfo.displayName} 已删除`);
-        }
-        
-        // 保存场景
-        function saveScene() {
-            try {
-                // 创建场景信息对象
-                const sceneInfo = {
-                    id: Date.now(),
-                    mapName: currentMapName,
-                    saveName: '场景保存_' + new Date().toLocaleDateString(),
-                    time: new Date().toISOString(),
-                    screenshot: renderer.domElement.toDataURL('image/png'),
-                    cameraPosition: {
-                        x: camera.position.x,
-                        y: camera.position.y,
-                        z: camera.position.z
-                    },
-                    cameraRotation: {
-                        x: camera.rotation.x,
-                        y: camera.rotation.y,
-                        z: camera.rotation.z
-                    },
-                    models: importedModels.map(model => ({
-                        name: model.name,
-                        displayName: model.displayName,
-                        position: {
-                            x: model.model.position.x,
-                            y: model.model.position.y,
-                            z: model.model.position.z
-                        },
-                        rotation: {
-                            x: model.model.rotation.x,
-                            y: model.model.rotation.y,
-                            z: model.model.rotation.z
-                        },
-                        scale: {
-                            x: model.model.scale.x,
-                            y: model.model.scale.y,
-                            z: model.model.scale.z
-                        }
-                    }))
-                };
-                
-                // 保存到本地存储
-                savedScenes.push(sceneInfo);
-                localStorage.setItem('3dHeartHouseSavedScenes', JSON.stringify(savedScenes));
-                
-                showNotification(`场景"${sceneInfo.saveName}"已保存到历史小屋！`);
-                console.log("场景保存成功:", sceneInfo);
-                
-            } catch (error) {
-                console.error("保存场景失败:", error);
-                showNotification("保存场景失败: " + error.message, 5000);
-            }
-        }
-        
-        // 处理封面图片选择
-        function handleCoverImageSelect(file) {
-            if (!file) return;
-            
-            coverImageFile = file;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                coverImageURL = e.target.result;
-                coverPreview.innerHTML = ``;
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        // 切换声音
-        function toggleSound() {
-            isSoundOn = !isSoundOn;
-            soundToggleBtn.querySelector('span').textContent = `声音: ${isSoundOn ? '开' : '关'}`;
-            showNotification(`声音已${isSoundOn ? '开启' : '关闭'}`);
-        }
-        
-        // 截图功能
-        function takeScreenshot() {
-            try {
-                const dataURL = renderer.domElement.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = '3d-heart-house-screenshot.png';
-                link.href = dataURL;
-                link.click();
-                showNotification('截图已保存');
-            } catch (error) {
-                console.error('截图失败:', error);
-                showNotification('截图失败，请重试');
-            }
-        }
-        
-        // 退出游戏
-        function exitGame() {
-            showNotification('正在退出游戏...');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 500);
-        }
-        
-        // 页面事件监听
-        backBtn.addEventListener('click', function() {
-            window.location.href = 'index.html';
-        });
-        
-        addModelBtn.addEventListener('click', function() {
-            importModal.classList.add('active');
-            selectedFile = null;
-            modelFileInfo.classList.remove('show');
-        });
-        
-        generateModelBtn.addEventListener('click', function() {
-            generateModal.classList.add('active');
-        });
-        
-        deleteModelBtn.addEventListener('click', function() {
-            updateModelsList();
-            modelsListModal.classList.add('active');
-        });
-        
-        menuBtn.addEventListener('click', function() {
-            isMenuOpen = !isMenuOpen;
-            if (isMenuOpen) {
-                menuPanel.classList.add('active');
-            } else {
-                menuPanel.classList.remove('active');
-            }
-        });
-        
-        toggleLightsBtn.addEventListener('click', toggleLights);
-        
-        exportSceneBtn.addEventListener('click', saveScene);
-        
-        soundToggleBtn.addEventListener('click', toggleSound);
-        
-        screenshotBtn.addEventListener('click', takeScreenshot);
-        
-        saveSceneBtn.addEventListener('click', saveScene);
-        
-        exitBtn.addEventListener('click', exitGame);
-        
-        // 模态窗口控制
-        closeImportModal.addEventListener('click', function() {
-            importModal.classList.remove('active');
-        });
-        
-        cancelImportBtn.addEventListener('click', function() {
-            importModal.classList.remove('active');
-        });
-        
-        confirmImportBtn.addEventListener('click', function() {
-            if (!selectedFile) {
-                showNotification('请先选择一个3D模型文件', 3000);
-                return;
-            }
-            
-            importModal.classList.remove('active');
-            loadModelFile(selectedFile);
-        });
-        
-        closeGenerateModal.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-        });
-        
-        cancelGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-        });
-        
-        confirmGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-            showNotification('生成模型功能开发中');
-        });
-        
-        closeModelsListModal.addEventListener('click', function() {
-            modelsListModal.classList.remove('active');
-        });
-        
-        closeModelsListBtn.addEventListener('click', function() {
-            modelsListModal.classList.remove('active');
-        });
-        
-        closeConfirmDeleteModal.addEventListener('click', function() {
-            confirmDeleteModal.classList.remove('active');
-        });
-        
-        cancelConfirmDeleteBtn.addEventListener('click', function() {
-            confirmDeleteModal.classList.remove('active');
-        });
-        
-        confirmModelDeleteBtn.addEventListener('click', deleteModel);
-        
-        closeSuccessModal.addEventListener('click', function() {
-            successModal.classList.remove('active');
-        });
-        
-        closeSuccessBtn.addEventListener('click', function() {
-            successModal.classList.remove('active');
-        });
-        
-        closeSaveSceneModal.addEventListener('click', function() {
-            saveSceneModal.classList.remove('active');
-        });
-        
-        cancelSaveSceneBtn.addEventListener('click', function() {
-            saveSceneModal.classList.remove('active');
-        });
-        
-        confirmSaveSceneBtn.addEventListener('click', saveScene);
-        
-        // 模型上传区域点击事件
-        modelUploadArea.addEventListener('click', function() {
-            modelFileInput.click();
-        });
-        
-        // 图片上传区域点击事件
-        imageUploadArea.addEventListener('click', function() {
-            imageFileInput.click();
-        });
-        
-        // 文件选择事件
-        modelFileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleModelFileSelect(file);
-            }
-        });
-        
-        // 封面图片选择事件
-        saveSceneCover.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleCoverImageSelect(file);
-            }
-        });
-        
-        // 拖拽上传处理
-        modelUploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            modelUploadArea.style.backgroundColor = '#e8e4ff';
-            modelUploadArea.style.borderColor = '#7b68ee';
-        });
-        
-        modelUploadArea.addEventListener('dragleave', function() {
-            modelUploadArea.style.backgroundColor = '#f9f7ff';
-            modelUploadArea.style.borderColor = '#c5b3ff';
-        });
-        
-        modelUploadArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            modelUploadArea.style.backgroundColor = '#f9f7ff';
-            modelUploadArea.style.borderColor = '#c5b3ff';
-            
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                // 检查文件类型
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (ext === 'glb' || ext === 'gltf') {
-                    handleModelFileSelect(file);
-                } else {
-                    showNotification('不支持的文件格式，请选择GLB或GLTF文件', 3000);
-                }
-            }
-        });
-        
-        // 点击其他地方关闭菜单
-        document.addEventListener('click', function(e) {
-            if (isMenuOpen && !menuPanel.contains(e.target) && e.target !== menuBtn) {
-                menuPanel.classList.remove('active');
-                isMenuOpen = false;
-            }
-            
-            // 点击模态窗口外部关闭模态窗口
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (modal.classList.contains('active')) {
-                    if (e.target === modal) {
-                        modal.classList.remove('active');
-                    }
-                }
-            });
+            }, 2000);
         });
         
         // 显示初始提示
