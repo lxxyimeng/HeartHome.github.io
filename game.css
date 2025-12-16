@@ -1,0 +1,847 @@
+/* game.css - 3D心动小屋游戏样式 */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+
+body {
+    overflow: hidden;
+    color: #333;
+}
+
+/* 加载屏幕 */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    color: white;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #7b68ee;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+}
+
+.progress-container {
+    width: 300px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7b68ee, #ff6b8b);
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+.time-estimate {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-top: 10px;
+}
+
+/* 游戏容器 */
+#game-container {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+#game-canvas {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* 游戏UI控制面板 */
+.game-ui {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 10;
+}
+
+.game-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #7b68ee;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.game-btn:hover {
+    background-color: #7b68ee;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* 模型控制按钮 */
+.model-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    z-index: 10;
+    align-items: center;
+}
+
+.control-btn {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 25px;
+    padding: 12px 25px;
+    color: #7b68ee;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.control-btn:hover {
+    background-color: #7b68ee;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* 当前操作状态提示 */
+.current-action {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 10px 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: none;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+    font-weight: 600;
+    color: #7b68ee;
+    max-width: 400px;
+    text-align: center;
+}
+
+.current-action i {
+    color: #7b68ee;
+    font-size: 1.2rem;
+}
+
+/* 提示信息 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    transform: translateX(120%);
+    transition: transform 0.4s ease;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification i {
+    color: #7b68ee;
+    font-size: 1.2rem;
+}
+
+/* 当前操作状态提示 */
+.current-action {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 10px 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: none;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+    font-weight: 600;
+    color: #7b68ee;
+    max-width: 400px;
+    text-align: center;
+}
+
+.current-action i {
+    color: #7b68ee;
+    font-size: 1.2rem;
+}
+
+/* 模态窗口 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* 更透明的背景 */
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal.active {
+    opacity: 1;
+    pointer-events: all;
+    display: flex;
+}
+
+.modal-content {
+    background-color: rgba(255, 255, 255, 0.85); /* 改为半透明白色背景 */
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    padding: 30px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    transform: translateY(20px);
+    transition: transform 0.4s ease;
+    backdrop-filter: blur(10px); /* 添加背景模糊效果 */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* 添加半透明边框 */
+}
+
+.modal.active .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(238, 238, 238, 0.7); /* 半透明边框 */
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    color: #7b68ee;
+    font-weight: 700;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: rgba(153, 153, 153, 0.8);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: #ff4d6d;
+}
+
+.upload-area {
+    border: 3px dashed rgba(197, 179, 255, 0.8); /* 半透明边框 */
+    border-radius: 15px;
+    padding: 40px 20px;
+    text-align: center;
+    background-color: rgba(249, 247, 255, 0.6); /* 半透明背景 */
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+}
+
+.upload-area:hover {
+    background-color: rgba(240, 236, 255, 0.8);
+    border-color: rgba(123, 104, 238, 0.9);
+}
+
+.upload-area i {
+    font-size: 3rem;
+    color: #7b68ee;
+    margin-bottom: 15px;
+    opacity: 0.9;
+}
+
+.upload-text {
+    font-size: 1.1rem;
+    color: rgba(102, 102, 102, 0.9);
+    margin-bottom: 5px;
+}
+
+.upload-hint {
+    font-size: 0.9rem;
+    color: rgba(153, 153, 153, 0.8);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.action-btn {
+    padding: 12px 25px;
+    border-radius: 50px;
+    border: none;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.primary-btn {
+    background-color: #7b68ee;
+    color: white;
+}
+
+.primary-btn:hover {
+    background-color: #6a58d3;
+    transform: translateY(-2px);
+}
+
+.secondary-btn {
+    background-color: rgba(240, 240, 240, 0.9);
+    color: rgba(102, 102, 102, 0.9);
+}
+
+.secondary-btn:hover {
+    background-color: rgba(224, 224, 224, 0.9);
+    transform: translateY(-2px);
+}
+
+/* 控制说明 */
+.controls-info {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    z-index: 5;
+}
+
+.controls-info p {
+    margin: 5px 0;
+}
+
+/* 键盘控制提示样式 */
+.keyboard-controls {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    z-index: 5;
+}
+
+.keyboard-controls h3 {
+    margin-bottom: 10px;
+    color: #7b68ee;
+    font-size: 1rem;
+}
+
+.key-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.key {
+    display: inline-block;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    min-width: 30px;
+    text-align: center;
+}
+
+.key-description {
+    margin-left: 10px;
+}
+
+/* 文件输入 */
+.file-input {
+    display: none;
+}
+
+/* 菜单面板 */
+.menu-panel {
+    position: fixed;
+    top: 80px;
+    right: 60px; /* 修改为60px，避免被遮挡 */
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    transform: translateY(-20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.menu-panel.active {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.menu-item:hover {
+    background-color: rgba(245, 245, 255, 0.7);
+}
+
+.menu-item i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+    color: #7b68ee;
+}
+
+.menu-divider {
+    height: 1px;
+    background-color: rgba(238, 238, 238, 0.7);
+    margin: 10px 0;
+}
+
+/* 导入模型模态窗口样式 */
+#import-modal .upload-area {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#import-modal .file-info {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: rgba(240, 248, 255, 0.6);
+    border-radius: 8px;
+    width: 100%;
+    text-align: left;
+    display: none;
+    border: 1px solid rgba(221, 221, 221, 0.5);
+}
+
+#import-modal .file-info.show {
+    display: block;
+}
+
+#import-modal .file-name {
+    font-weight: 600;
+    color: #7b68ee;
+    margin-bottom: 5px;
+}
+
+#import-modal .file-size {
+    font-size: 0.9rem;
+    color: rgba(102, 102, 102, 0.8);
+}
+
+/* 模型列表模态窗口样式 - 用于删除模型和选择模型 */
+#models-list-modal .models-list-container,
+#select-model-modal .models-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding-right: 10px;
+}
+
+.models-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.models-list-container::-webkit-scrollbar-track {
+    background: rgba(241, 241, 241, 0.5);
+    border-radius: 3px;
+}
+
+.models-list-container::-webkit-scrollbar-thumb {
+    background: rgba(197, 179, 255, 0.7);
+    border-radius: 3px;
+}
+
+.models-list-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(123, 104, 238, 0.8);
+}
+
+.model-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background-color: rgba(249, 247, 255, 0.6);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(238, 238, 238, 0.6);
+    cursor: pointer;
+}
+
+.model-item:hover {
+    background-color: rgba(240, 236, 255, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(123, 104, 238, 0.1);
+}
+
+/* 模型选择列表中的选中状态 */
+.model-item.selected {
+    background-color: rgba(230, 224, 255, 0.8);
+    border-color: rgba(123, 104, 238, 0.6);
+    box-shadow: 0 5px 10px rgba(123, 104, 238, 0.2);
+}
+
+.model-info {
+    flex: 1;
+}
+
+.model-name {
+    font-weight: 600;
+    color: #7b68ee;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.model-time {
+    font-size: 0.85rem;
+    color: rgba(136, 136, 136, 0.8);
+}
+
+.delete-model-btn {
+    background-color: rgba(255, 107, 139, 0.9);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+    font-weight: 600;
+}
+
+.delete-model-btn:hover {
+    background-color: rgba(255, 77, 109, 0.9);
+    transform: scale(1.05);
+}
+
+.no-models-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(136, 136, 136, 0.8);
+    font-size: 1.1rem;
+}
+
+.no-models-message i {
+    font-size: 3rem;
+    color: rgba(221, 221, 221, 0.7);
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* 确认删除模态窗口样式 */
+#confirm-delete-modal .confirm-text {
+    text-align: center;
+    padding: 20px 0;
+    font-size: 1.1rem;
+    color: rgba(102, 102, 102, 0.9);
+}
+
+.model-name-to-delete {
+    color: #7b68ee;
+    font-weight: 600;
+}
+
+/* 成功模态窗口 */
+#success-modal .modal-content {
+    text-align: center;
+}
+
+#success-modal p {
+    margin: 20px 0;
+    font-size: 1.1rem;
+    color: rgba(102, 102, 102, 0.9);
+}
+
+/* 保存场景模态窗口 */
+#save-scene-modal .save-form {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #7b68ee;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid rgba(221, 221, 221, 0.6);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border 0.3s;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: rgba(123, 104, 238, 0.8);
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.preview-section {
+    margin-top: 20px;
+}
+
+.preview-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.preview-image {
+    width: 200px;
+    height: 150px;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(240, 240, 240, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(221, 221, 221, 0.4);
+}
+
+.preview-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.default-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(136, 136, 136, 0.8);
+}
+
+.default-preview i {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    color: rgba(136, 136, 136, 0.6);
+}
+
+/* 返回按钮 */
+.back-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50px;
+    padding: 12px 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #7b68ee;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.back-btn:hover {
+    background-color: rgba(123, 104, 238, 0.9);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* 模型选择模态窗口特定样式 */
+#select-model-modal .modal-content {
+    max-width: 600px;
+    background-color: rgba(255, 255, 255, 0.9); /* 稍微更不透明一点以便阅读 */
+    backdrop-filter: blur(15px);
+}
+
+#select-model-modal .model-item {
+    justify-content: flex-start;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(221, 221, 221, 0.5);
+}
+
+#select-model-modal .model-item.selected {
+    background-color: rgba(230, 224, 255, 0.9);
+    border-color: rgba(123, 104, 238, 0.6);
+}
+
+#select-model-modal .delete-model-btn {
+    display: none;
+}
+
+/* 模型控制按钮旁边的模式指示器 */
+#current-mode-indicator {
+    margin-left: 5px;
+    color: #7b68ee;
+    font-weight: bold;
+    font-size: 0.9rem;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 5px 10px;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .controls-info {
+        font-size: 0.8rem;
+        padding: 10px;
+        bottom: 10px;
+        left: 10px;
+    }
+    
+    .keyboard-controls {
+        left: 10px;
+        right: 10px;
+        top: auto;
+        bottom: 100px;
+        width: calc(100% - 20px);
+    }
+    
+    .menu-panel {
+        width: 200px;
+    }
+    
+    .model-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .delete-model-btn {
+        align-self: flex-end;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .game-btn {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .control-btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .model-controls {
+        bottom: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .current-action {
+        top: 10px;
+        width: 90%;
+        max-width: none;
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+    
+    #current-mode-indicator {
+        display: block;
+        margin-left: 0;
+        margin-top: 5px;
+        width: 100%;
+        text-align: center;
+    }
+}
