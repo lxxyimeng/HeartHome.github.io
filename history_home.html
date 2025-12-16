@@ -14,9 +14,28 @@
         }
         
         body {
-            background: linear-gradient(135deg, #ffcfe0 0%, #ff9a9e 100%);
+            /* 核心修改：替换为背景图片 */
+            background-image: url('his_home.png');
+            background-size: cover; /* 让图片覆盖整个页面 */
+            background-position: center; /* 图片居中显示 */
+            background-repeat: no-repeat; /* 不重复平铺 */
+            background-attachment: fixed; /* 滚动时背景固定 */
             min-height: 100vh;
             padding: 20px;
+            /* 增加半透明遮罩，提升前景内容可读性 */
+            position: relative;
+        }
+        
+        /* 新增：背景遮罩层，优化文字与背景的对比度 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.3); /* 黑色半透明遮罩，可调整透明度 */
+            z-index: -1;
         }
         
         .header {
@@ -36,10 +55,11 @@
             font-size: 1.2rem;
             color: white;
             margin-bottom: 20px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* 增加文字阴影，提升可读性 */
         }
         
         .back-btn {
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.9); /* 轻微透明，适配背景图 */
             border: none;
             border-radius: 50px;
             padding: 12px 25px;
@@ -58,12 +78,13 @@
         .back-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(255, 107, 139, 0.3);
+            background-color: white;
         }
         
         .history-container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
+            background: rgba(255, 255, 255, 0.95); /* 轻微透明，保留质感 */
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -308,7 +329,7 @@
                 
                 historyItem.innerHTML = `
                     <div class="history-preview">
-                        ${previewImage ? `` : '<i class="fas fa-image"></i>'}
+                        ${previewImage ? `<img src="${previewImage}" alt="${scene.saveName}">` : '<i class="fas fa-image"></i>'}
                     </div>
                     <div class="history-info">
                         <div class="history-name">${scene.saveName}</div>
