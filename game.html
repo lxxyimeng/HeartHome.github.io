@@ -1,311 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D心动小屋 - 游戏</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- 引入分离的CSS文件 -->
-    <link rel="stylesheet" href="game.css">
-</head>
-<body>
-    <!-- 返回按钮 -->
-    <button class="back-btn" id="back-btn">
-        <i class="fas fa-arrow-left"></i>
-        返回主页
-    </button>
-    
-    <!-- 加载屏幕 -->
-    <div id="loading-screen">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loading-text">正在初始化3D引擎...</div>
-        <div class="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
-        <div class="time-estimate" id="time-estimate">预计时间: 2秒</div>
-    </div>
-    
-    <!-- 游戏容器 -->
-    <div id="game-container">
-        <canvas id="game-canvas"></canvas>
-        
-        <!-- 游戏控制按钮 -->
-        <div class="game-ui">
-            <button class="game-btn" id="add-model-btn" title="加入模型">
-                <i class="fas fa-cube"></i>
-            </button>
-            <button class="game-btn" id="generate-model-btn" title="生成模型">
-                <i class="fas fa-magic"></i>
-            </button>
-            <button class="game-btn" id="delete-model-btn" title="删除模型">
-                <i class="fas fa-trash"></i>
-            </button>
-            <button class="game-btn" id="menu-btn" title="菜单">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-        
-        <!-- 菜单面板 -->
-        <div class="menu-panel" id="menu-panel">
-            <div class="menu-item" id="sound-toggle-btn">
-                <i class="fas fa-volume-up"></i>
-                <span>声音: 开</span>
-            </div>
-            <div class="menu-item" id="screenshot-btn">
-                <i class="fas fa-camera"></i>
-                <span>截图</span>
-            </div>
-            <div class="menu-divider"></div>
-            <div class="menu-item" id="save-scene-btn">
-                <i class="fas fa-save"></i>
-                <span>保存场景</span>
-            </div>
-            <div class="menu-divider"></div>
-            <div class="menu-item" id="exit-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>退出游戏</span>
-            </div>
-        </div>
-        
-        <!-- 键盘控制提示 -->
-        <div class="keyboard-controls" id="keyboard-controls">
-            <h3>键盘控制</h3>
-            <div class="key-row">
-                <div><span class="key">W</span><span class="key-description">向上移动</span></div>
-                <div><span class="key">S</span><span class="key-description">向下移动</span></div>
-            </div>
-            <div class="key-row">
-                <div><span class="key">A</span><span class="key-description">向左移动</span></div>
-                <div><span class="key">D</span><span class="key-description">向右移动</span></div>
-            </div>
-            <div class="key-row">
-                <div><span class="key">U</span><span class="key-description">向前移动</span></div>
-                <div><span class="key">Y</span><span class="key-description">向后移动</span></div>
-            </div>
-            <!-- 添加缩放控制提示 -->
-            <div class="key-row">
-                <div><span class="key">B</span><span class="key-description">缩小模型</span></div>
-                <div><span class="key">N</span><span class="key-description">放大模型</span></div>
-            </div>
-            <!-- 添加旋转控制提示 -->
-            <div class="key-row">
-                <div><span class="key">M</span><span class="key-description">旋转模型(10度)</span></div>
-            </div>
-            <!-- 添加固定模型控制提示 -->
-            <div class="key-row">
-                <div><span class="key">P</span><span class="key-description">固定模型</span></div>
-            </div>
-        </div>
-        
-        <!-- 控制说明 -->
-        <div class="controls-info">
-            <p>鼠标左键拖动: 旋转视角</p>
-            <p>鼠标右键拖动: 平移视角</p>
-            <p>鼠标滚轮: 缩放视角</p>
-        </div>
-        
-        <!-- 模型控制按钮 -->
-        <div class="model-controls">
-            <button class="control-btn" id="toggle-lights-btn">
-                <i class="fas fa-lightbulb"></i>
-                切换灯光
-            </button>
-            <!-- 将"保存场景"按钮改为"移动视角/模型" -->
-            <button class="control-btn" id="toggle-move-mode-btn">
-                <i class="fas fa-arrows-alt"></i>
-                <span id="move-mode-text">移动视角</span>
-            </button>
-            <span id="current-mode-indicator" style="margin-left: 5px; color: #7b68ee; font-weight: bold;">(视角)</span>
-        </div>
-        
-        <!-- 当前操作状态提示 -->
-        <div class="current-action" id="current-action">
-            <i class="fas fa-info-circle"></i>
-            <span id="action-text">当前模式: 移动视角</span>
-        </div>
-    </div>
-    
-    <!-- 导入模型模态窗口 -->
-    <div class="modal" id="import-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">导入3D模型</h3>
-                <button class="close-modal" id="close-import-modal">&times;</button>
-            </div>
-            
-            <div class="upload-area" id="model-upload-area">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p class="upload-text">点击或拖拽3D模型文件至此处上传</p>
-                <p class="upload-hint">支持GLB、GLTF格式文件</p>
-                <div class="file-info" id="model-file-info">
-                    <div class="file-name" id="model-file-name"></div>
-                    <div class="file-size" id="model-file-size"></div>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="cancel-import-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-import-btn">导入模型</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 生成模型模态窗口 -->
-    <div class="modal" id="generate-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">生成3D模型</h3>
-                <button class="close-modal" id="close-generate-modal">&times;</button>
-            </div>
-            
-            <div class="upload-area" id="image-upload-area">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p class="upload-text">点击或拖拽图片至此处上传</p>
-                <p class="upload-hint">支持JPG、PNG、WEBP格式，建议图片分辨率不低于1024x1024</p>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="cancel-generate-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-generate-btn">开始生成3D模型</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 模型列表模态窗口（用于删除模型） -->
-    <div class="modal" id="models-list-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">删除模型</h3>
-                <button class="close-modal" id="close-models-list-modal">&times;</button>
-            </div>
-            
-            <div class="models-list-container" id="models-list-container">
-                <!-- 模型列表将动态添加到这里 -->
-                <div class="no-models-message" id="no-models-message">
-                    <i class="fas fa-cube"></i>
-                    <p>还没有导入任何模型</p>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="close-models-list-btn">关闭</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 确认删除模态窗口 -->
-    <div class="modal" id="confirm-delete-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">确认删除</h3>
-                <button class="close-modal" id="close-confirm-delete-modal">&times;</button>
-            </div>
-            
-            <div class="confirm-text">
-                <p>您确定要删除模型 <span class="model-name-to-delete" id="model-name-to-delete">未知模型</span> 吗？此操作不可撤销。</p>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="cancel-confirm-delete-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-model-delete-btn">确认删除</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 成功模态窗口 -->
-    <div class="modal" id="success-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">操作成功</h3>
-                <button class="close-modal" id="close-success-modal">&times;</button>
-            </div>
-            
-            <p id="success-message">模型已成功添加！</p>
-            
-            <div class="modal-actions">
-                <button class="action-btn primary-btn" id="close-success-btn">确定</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 保存场景模态窗口 -->
-    <div class="modal" id="save-scene-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">保存场景</h3>
-                <button class="close-modal" id="close-save-scene-modal">&times;</button>
-            </div>
-            
-            <div class="save-form">
-                <div class="form-group">
-                    <label class="form-label" for="save-scene-name">场景名称</label>
-                    <input type="text" class="form-input" id="save-scene-name" placeholder="请输入场景名称" value="场景保存">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="save-scene-cover">封面图片 (可选)</label>
-                    <input type="file" class="form-input" id="save-scene-cover" accept=".jpg,.jpeg,.png,.webp">
-                </div>
-                
-                <div class="preview-section">
-                    <label class="form-label">封面预览</label>
-                    <div class="preview-container">
-                        <div class="preview-image" id="cover-preview">
-                            <div class="default-preview">
-                                <i class="fas fa-image"></i>
-                                <span>默认封面</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="cancel-save-scene-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-save-scene-btn">保存场景</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 模型选择模态窗口（用于移动模型） -->
-    <div class="modal" id="select-model-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">选择要移动的模型</h3>
-                <button class="close-modal" id="close-select-model-modal">&times;</button>
-            </div>
-            
-            <div class="models-list-container" id="select-models-list-container">
-                <!-- 可移动的模型列表将动态添加到这里 -->
-                <div class="no-models-message" id="select-no-models-message">
-                    <i class="fas fa-cube"></i>
-                    <p>还没有导入任何模型</p>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="close-select-models-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-select-model-btn" disabled>选择此模型</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 提示信息 -->
-    <div class="notification" id="notification">
-        <i class="fas fa-info-circle"></i>
-        <span id="notification-text">欢迎来到3D心动小屋！</span>
-    </div>
-    
-    <!-- 隐藏的文件输入 -->
-    <input type="file" id="model-file-input" accept=".glb,.gltf" class="file-input">
-    <input type="file" id="image-file-input" accept=".jpg,.jpeg,.png,.webp" class="file-input">
-
-    <!-- 引入Three.js库和控制器 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
-    
-    <!-- JavaScript部分 -->
+<!-- JavaScript部分 -->
     <script>
         console.log("3D心动小屋游戏初始化...");
         
@@ -333,6 +26,10 @@
         let isHistoryLoading = false;
         let isGameInitialized = false;
         let isHistoryModalOpen = false;
+        
+        // 新增：从URL获取场景ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const loadSceneId = urlParams.get('sceneId');
         
         // 新增：控制模式相关变量
         let currentMoveMode = 'view'; // 'view' 或 'model'
@@ -427,6 +124,9 @@
         const noModelsMessage = document.getElementById('no-models-message');
         const selectNoModelsMessage = document.getElementById('select-no-models-message');
         const modelNameToDelete = document.getElementById('model-name-to-delete');
+        
+        // 新增：文件缓冲区存储
+        let fileBuffers = {};
         
         // 显示提示信息
         function showNotification(message, duration = 3000) {
@@ -1188,8 +888,8 @@
             showNotification(`已选择文件: ${file.name}`);
         }
         
-        // 加载3D模型文件 - 修改以保持模型原始颜色
-        function loadModelFile(file) {
+        // 加载3D模型文件 - 增强版本，支持保存和加载变换
+        function loadModelFile(file, modelData = null) {
             if (!GLTFLoader) {
                 showNotification('模型加载器未初始化，请重新刷新页面', 5000);
                 return;
@@ -1201,16 +901,59 @@
             reader.onload = function (event) {
                 try {
                     const contents = event.target.result;
+                    
+                    // 保存文件缓冲区，用于场景保存
+                    fileBuffers[file.name] = contents;
+                    
                     GLTFLoader.parse(contents, '', function (gltf) {
                         const model = gltf.scene;
-                        model.position.set(0, 2, 0);
                         
-                        // 计算模型尺寸并缩放
-                        const box = new THREE.Box3().setFromObject(model);
-                        const size = box.getSize(new THREE.Vector3());
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 1.5 / maxDim;
-                        model.scale.setScalar(scale);
+                        // 如果有模型数据，应用保存的变换
+                        if (modelData) {
+                            // 应用位置
+                            if (modelData.position) {
+                                model.position.set(
+                                    modelData.position.x || 0,
+                                    modelData.position.y || 2,
+                                    modelData.position.z || 0
+                                );
+                            } else {
+                                model.position.set(0, 2, 0);
+                            }
+                            
+                            // 应用旋转
+                            if (modelData.rotation) {
+                                model.rotation.set(
+                                    modelData.rotation.x || 0,
+                                    modelData.rotation.y || 0,
+                                    modelData.rotation.z || 0
+                                );
+                            }
+                            
+                            // 应用缩放
+                            if (modelData.scale) {
+                                model.scale.set(
+                                    modelData.scale.x || 1,
+                                    modelData.scale.y || 1,
+                                    modelData.scale.z || 1
+                                );
+                            } else {
+                                // 如果没有保存的缩放，则计算默认缩放
+                                const box = new THREE.Box3().setFromObject(model);
+                                const size = box.getSize(new THREE.Vector3());
+                                const maxDim = Math.max(size.x, size.y, size.z);
+                                const scale = 1.5 / maxDim;
+                                model.scale.setScalar(scale);
+                            }
+                        } else {
+                            // 默认位置和缩放
+                            model.position.set(0, 2, 0);
+                            const box = new THREE.Box3().setFromObject(model);
+                            const size = box.getSize(new THREE.Vector3());
+                            const maxDim = Math.max(size.x, size.y, size.z);
+                            const scale = 1.5 / maxDim;
+                            model.scale.setScalar(scale);
+                        }
                         
                         // 遍历模型，修改材质设置以保持原始颜色
                         model.traverse(function (node) {
@@ -1240,7 +983,9 @@
                             name: file.name,
                             displayName: removeFileExtension(file.name),
                             importTime: new Date(),
-                            size: file.size
+                            size: file.size,
+                            fileBuffer: contents,
+                            fileData: modelData
                         };
                         
                         importedModels.push(modelInfo);
@@ -1248,9 +993,15 @@
                         updateSelectModelsList();
                         hideLoading();
                         
-                        successMessage.textContent = `模型 "${modelInfo.displayName}" 已成功导入！`;
+                        if (modelData) {
+                            successMessage.textContent = `模型 "${modelInfo.displayName}" 已从场景加载！`;
+                            showNotification(`模型 "${modelInfo.displayName}" 已从场景加载，位置和大小已恢复`);
+                        } else {
+                            successMessage.textContent = `模型 "${modelInfo.displayName}" 已成功导入！`;
+                            showNotification(`模型 "${modelInfo.displayName}" 加载成功！颜色已优化`);
+                        }
+                        
                         successModal.classList.add('active');
-                        showNotification(`模型 "${modelInfo.displayName}" 加载成功！颜色已优化`);
                         
                     }, function (error) {
                         hideLoading();
@@ -1271,6 +1022,117 @@
             };
             
             reader.readAsArrayBuffer(file);
+        }
+        
+        // 从ArrayBuffer加载模型
+        function loadModelFromArrayBuffer(arrayBuffer, fileName, modelData = null) {
+            if (!GLTFLoader) {
+                showNotification('模型加载器未初始化，请重新刷新页面', 5000);
+                return;
+            }
+            
+            try {
+                GLTFLoader.parse(arrayBuffer, '', function (gltf) {
+                    const model = gltf.scene;
+                    
+                    // 如果有模型数据，应用保存的变换
+                    if (modelData) {
+                        // 应用位置
+                        if (modelData.position) {
+                            model.position.set(
+                                modelData.position.x || 0,
+                                modelData.position.y || 2,
+                                modelData.position.z || 0
+                            );
+                        } else {
+                            model.position.set(0, 2, 0);
+                        }
+                        
+                        // 应用旋转
+                        if (modelData.rotation) {
+                            model.rotation.set(
+                                modelData.rotation.x || 0,
+                                modelData.rotation.y || 0,
+                                modelData.rotation.z || 0
+                            );
+                        }
+                        
+                        // 应用缩放
+                        if (modelData.scale) {
+                            model.scale.set(
+                                modelData.scale.x || 1,
+                                modelData.scale.y || 1,
+                                modelData.scale.z || 1
+                            );
+                        } else {
+                            // 如果没有保存的缩放，则计算默认缩放
+                            const box = new THREE.Box3().setFromObject(model);
+                            const size = box.getSize(new THREE.Vector3());
+                            const maxDim = Math.max(size.x, size.y, size.z);
+                            const scale = 1.5 / maxDim;
+                            model.scale.setScalar(scale);
+                        }
+                    } else {
+                        // 默认位置和缩放
+                        model.position.set(0, 2, 0);
+                        const box = new THREE.Box3().setFromObject(model);
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scale = 1.5 / maxDim;
+                        model.scale.setScalar(scale);
+                    }
+                    
+                    // 遍历模型，修改材质设置以保持原始颜色
+                    model.traverse(function (node) {
+                        if (node.isMesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                            
+                            // 修复材质颜色变淡的问题
+                            if (node.material) {
+                                // 如果是数组材质
+                                if (Array.isArray(node.material)) {
+                                    node.material.forEach(material => {
+                                        fixMaterialColor(material);
+                                    });
+                                } else {
+                                    // 单个材质
+                                    fixMaterialColor(node.material);
+                                }
+                            }
+                        }
+                    });
+                    
+                    scene.add(model);
+                    
+                    const modelInfo = {
+                        model: model,
+                        name: fileName,
+                        displayName: removeFileExtension(fileName),
+                        importTime: new Date(),
+                        size: arrayBuffer.byteLength,
+                        fileBuffer: arrayBuffer,
+                        fileData: modelData
+                    };
+                    
+                    importedModels.push(modelInfo);
+                    updateModelsList();
+                    updateSelectModelsList();
+                    
+                    if (modelData) {
+                        showNotification(`模型 "${modelInfo.displayName}" 已从场景加载，位置和大小已恢复`);
+                    } else {
+                        showNotification(`模型 "${modelInfo.displayName}" 加载成功！颜色已优化`);
+                    }
+                    
+                }, function (error) {
+                    console.error('模型加载失败:', error);
+                    showNotification(`模型加载失败: ${error.message || '未知错误'}`, 5000);
+                });
+            } catch (error) {
+                console.error('模型解析失败:', error);
+                showNotification('模型文件格式错误', 5000);
+            }
         }
         
         // 修复材质颜色，防止颜色变淡
@@ -1374,19 +1236,20 @@
             try {
                 const savedData = localStorage.getItem('3dHeartHouseSavedScenes');
                 savedScenes = savedData ? JSON.parse(savedData) : [];
+                console.log(`加载了 ${savedScenes.length} 个保存的场景`);
             } catch (error) {
                 console.error("加载保存的场景失败:", error);
                 savedScenes = [];
             }
         }
         
-        // 保存场景
+        // 保存场景 - 增强版本
         function saveScene() {
             try {
                 const sceneInfo = {
                     id: Date.now(),
                     mapName: currentMapName,
-                    saveName: saveSceneName.value,
+                    saveName: saveSceneName.value || '未命名场景',
                     time: new Date().toISOString(),
                     coverImage: coverImageURL,
                     screenshot: renderer.domElement.toDataURL('image/png'),
@@ -1400,32 +1263,150 @@
                         y: camera.rotation.y,
                         z: camera.rotation.z
                     },
-                    models: importedModels.map(model => ({
-                        name: model.name,
-                        displayName: model.displayName,
-                        position: {
-                            x: model.model.position.x,
-                            y: model.model.position.y,
-                            z: model.model.position.z
-                        },
-                        rotation: {
-                            x: model.model.rotation.x,
-                            y: model.model.rotation.y,
-                            z: model.model.rotation.z
-                        },
-                        scale: {
-                            x: model.model.scale.x,
-                            y: model.model.scale.y,
-                            z: model.model.scale.z
+                    modelsCount: importedModels.length,
+                    models: importedModels.map(model => {
+                        // 将ArrayBuffer转换为Base64以便存储
+                        let fileBase64 = '';
+                        if (model.fileBuffer) {
+                            const bytes = new Uint8Array(model.fileBuffer);
+                            let binary = '';
+                            for (let i = 0; i < bytes.byteLength; i++) {
+                                binary += String.fromCharCode(bytes[i]);
+                            }
+                            fileBase64 = btoa(binary);
                         }
-                    }))
+                        
+                        return {
+                            name: model.name,
+                            displayName: model.displayName,
+                            fileBase64: fileBase64,
+                            fileSize: model.size,
+                            position: {
+                                x: model.model.position.x,
+                                y: model.model.position.y,
+                                z: model.model.position.z
+                            },
+                            rotation: {
+                                x: model.model.rotation.x,
+                                y: model.model.rotation.y,
+                                z: model.model.rotation.z
+                            },
+                            scale: {
+                                x: model.model.scale.x,
+                                y: model.model.scale.y,
+                                z: model.model.scale.z
+                            }
+                        };
+                    })
                 };
+                
                 savedScenes.push(sceneInfo);
                 localStorage.setItem('3dHeartHouseSavedScenes', JSON.stringify(savedScenes));
-                showNotification(`场景"${sceneInfo.saveName}"已保存到历史小屋！`);
+                
+                // 显示详细的保存信息
+                const modelNames = importedModels.map(model => model.displayName).join(', ');
+                const successMsg = `场景"${sceneInfo.saveName}"已保存到历史小屋！<br>
+                                 场景类型: ${sceneInfo.mapName}<br>
+                                 模型数量: ${sceneInfo.modelsCount}<br>
+                                 包含模型: ${modelNames || '无模型'}`;
+                
+                successMessage.innerHTML = successMsg;
+                successModal.classList.add('active');
+                
+                showNotification(`场景"${sceneInfo.saveName}"保存成功，包含${sceneInfo.modelsCount}个模型`);
+                
             } catch (error) {
                 console.error("保存场景失败:", error);
                 showNotification("保存场景失败: " + error.message, 5000);
+            }
+        }
+        
+        // 加载保存的场景
+        function loadScene(sceneId) {
+            try {
+                const sceneData = savedScenes.find(scene => scene.id == sceneId);
+                if (!sceneData) {
+                    showNotification('未找到场景数据', 3000);
+                    return;
+                }
+                
+                showLoading(`正在加载场景: ${sceneData.saveName}...`);
+                
+                // 清除当前所有模型
+                importedModels.forEach(modelInfo => {
+                    scene.remove(modelInfo.model);
+                });
+                importedModels = [];
+                updateModelsList();
+                updateSelectModelsList();
+                
+                // 设置相机位置
+                if (sceneData.cameraPosition) {
+                    camera.position.set(
+                        sceneData.cameraPosition.x,
+                        sceneData.cameraPosition.y,
+                        sceneData.cameraPosition.z
+                    );
+                }
+                
+                // 设置相机旋转
+                if (sceneData.cameraRotation) {
+                    camera.rotation.set(
+                        sceneData.cameraRotation.x,
+                        sceneData.cameraRotation.y,
+                        sceneData.cameraRotation.z
+                    );
+                }
+                
+                // 加载模型
+                if (sceneData.models && sceneData.models.length > 0) {
+                    let loadedCount = 0;
+                    const totalModels = sceneData.models.length;
+                    
+                    sceneData.models.forEach(modelData => {
+                        if (modelData.fileBase64) {
+                            try {
+                                // 将Base64转换回ArrayBuffer
+                                const binary = atob(modelData.fileBase64);
+                                const arrayBuffer = new ArrayBuffer(binary.length);
+                                const uint8Array = new Uint8Array(arrayBuffer);
+                                
+                                for (let i = 0; i < binary.length; i++) {
+                                    uint8Array[i] = binary.charCodeAt(i);
+                                }
+                                
+                                // 加载模型
+                                loadModelFromArrayBuffer(arrayBuffer, modelData.name, {
+                                    position: modelData.position,
+                                    rotation: modelData.rotation,
+                                    scale: modelData.scale
+                                });
+                                
+                                loadedCount++;
+                                
+                                // 更新加载进度
+                                updateProgress(Math.floor((loadedCount / totalModels) * 100));
+                                
+                                if (loadedCount === totalModels) {
+                                    hideLoading();
+                                    showNotification(`场景"${sceneData.saveName}"加载完成，共${totalModels}个模型`);
+                                    updateActionStatus(`已加载场景: ${sceneData.saveName}`);
+                                }
+                            } catch (error) {
+                                console.error(`加载模型 ${modelData.displayName} 失败:`, error);
+                                loadedCount++;
+                            }
+                        }
+                    });
+                } else {
+                    hideLoading();
+                    showNotification(`场景"${sceneData.saveName}"加载完成，该场景没有模型`);
+                }
+                
+            } catch (error) {
+                hideLoading();
+                console.error("加载场景失败:", error);
+                showNotification("加载场景失败: " + error.message, 5000);
             }
         }
         
@@ -1769,7 +1750,18 @@
                         if (initThreeJS()) {
                             hideLoading();
                             if (gameContainer) gameContainer.style.display = 'block';
-                            showNotification('温馨小屋已加载！使用鼠标拖拽旋转视角，滚轮缩放，键盘WSADUY控制移动，M键旋转模型');
+                            
+                            // 检查是否有要加载的场景
+                            if (loadSceneId) {
+                                console.log(`检测到场景ID: ${loadSceneId}，正在加载场景...`);
+                                setTimeout(() => {
+                                    loadScene(loadSceneId);
+                                }, 1000);
+                                showNotification(`正在加载保存的场景...`);
+                            } else {
+                                showNotification('温馨小屋已加载！使用鼠标拖拽旋转视角，滚轮缩放，键盘WSADUY控制移动，M键旋转模型');
+                            }
+                            
                             if (keyboardControlsDiv) keyboardControlsDiv.style.display = 'block';
                             if (currentAction) currentAction.style.display = 'flex';
                         } else {
