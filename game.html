@@ -1293,6 +1293,7 @@
         }
         
         // 创建房间
+        // 创建房间
         function createRoom() {
             const roomSize = 20;
             const wallHeight = 8;
@@ -1326,37 +1327,98 @@
             roomObjects.push(floor);
             console.log("地板创建完成，使用wood.png贴图");
             
-            // 墙壁材质
-            const wallMaterial = new THREE.MeshStandardMaterial({ 
+            // 加载墙面贴图
+            const wall1Texture = textureLoader.load('wall1.png', undefined, undefined, function(error) {
+                console.error('加载wall1.png纹理失败:', error);
+                showNotification('前/后墙贴图加载失败，使用默认颜色替代');
+            });
+            
+            const wall2Texture = textureLoader.load('wall2.png', undefined, undefined, function(error) {
+                console.error('加载wall2.png纹理失败:', error);
+                showNotification('左/右墙贴图加载失败，使用默认颜色替代');
+            });
+            
+            // 设置纹理重复和平铺
+            wall1Texture.wrapS = THREE.RepeatWrapping;
+            wall1Texture.wrapT = THREE.RepeatWrapping;
+            wall1Texture.repeat.set(roomSize/4, wallHeight/4);
+            
+            wall2Texture.wrapS = THREE.RepeatWrapping;
+            wall2Texture.wrapT = THREE.RepeatWrapping;
+            wall2Texture.repeat.set(roomSize/4, wallHeight/4);
+            
+            // 前墙和后墙使用wall1.png贴图
+            const wall1Material = new THREE.MeshStandardMaterial({ 
+                map: wall1Texture,
+                roughness: 0.7
+            });
+            
+            // 左墙和右墙使用wall2.png贴图
+            const wall2Material = new THREE.MeshStandardMaterial({ 
+                map: wall2Texture,
+                roughness: 0.7
+            });
+            
+            // 后墙 (使用wall1.png)
+            const backWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(roomSize, wallHeight),
+                wall1Material
+            );
+            backWall.position.z = -roomSize / 2;
+            backWall.position.y = wallHeight / 2;
+            backWall.receiveShadow = true;
+            backWall.name = 'backWall';
+            scene.add(backWall);
+            roomObjects.push(backWall);
+            
+            // 左墙 (使用wall2.png)
+            const leftWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(roomSize, wallHeight),
+                wall2Material
+            );
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.position.x = -roomSize / 2;
+            leftWall.position.y = wallHeight / 2;
+            leftWall.receiveShadow = true;
+            leftWall.name = 'leftWall';
+            scene.add(leftWall);
+            roomObjects.push(leftWall);
+            
+            // 右墙 (使用wall2.png)
+            const rightWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(roomSize, wallHeight),
+                wall2Material
+            );
+            rightWall.rotation.y = -Math.PI / 2;
+            rightWall.position.x = roomSize / 2;
+            rightWall.position.y = wallHeight / 2;
+            rightWall.receiveShadow = true;
+            rightWall.name = 'rightWall';
+            scene.add(rightWall);
+            roomObjects.push(rightWall);
+            
+            // 前墙 (使用wall1.png)
+            const frontWall = new THREE.Mesh(
+                new THREE.PlaneGeometry(roomSize, wallHeight),
+                wall1Material
+            );
+            frontWall.rotation.y = Math.PI;
+            frontWall.position.z = roomSize / 2;
+            frontWall.position.y = wallHeight / 2;
+            frontWall.receiveShadow = true;
+            frontWall.name = 'frontWall';
+            scene.add(frontWall);
+            roomObjects.push(frontWall);
+            
+            // 天花板
+            const ceilingMaterial = new THREE.MeshStandardMaterial({ 
                 color: 0xF5F5DC,
                 roughness: 0.7
             });
             
-            // 创建四面墙
-            const wallPositions = [
-                { position: [0, wallHeight/2, -roomSize/2], rotation: [0, 0, 0], name: 'backWall' },
-                { position: [-roomSize/2, wallHeight/2, 0], rotation: [0, Math.PI/2, 0], name: 'leftWall' },
-                { position: [roomSize/2, wallHeight/2, 0], rotation: [0, -Math.PI/2, 0], name: 'rightWall' },
-                { position: [0, wallHeight/2, roomSize/2], rotation: [0, Math.PI, 0], name: 'frontWall' }
-            ];
-            
-            wallPositions.forEach(wall => {
-                const wallMesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(roomSize, wallHeight),
-                    wallMaterial
-                );
-                wallMesh.position.set(...wall.position);
-                wallMesh.rotation.y = wall.rotation[1];
-                wallMesh.receiveShadow = true;
-                wallMesh.name = wall.name;
-                scene.add(wallMesh);
-                roomObjects.push(wallMesh);
-            });
-            
-            // 天花板
             const ceiling = new THREE.Mesh(
                 new THREE.PlaneGeometry(roomSize, roomSize),
-                wallMaterial
+                ceilingMaterial
             );
             ceiling.rotation.x = Math.PI / 2;
             ceiling.position.y = wallHeight;
