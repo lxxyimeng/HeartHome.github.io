@@ -743,10 +743,24 @@ body {
 }
 
 /* 模型选择模态窗口特定样式 */
+/* 模型选择模态窗口特定样式 - 调整为靠右+更小尺寸 */
+#select-model-modal {
+    /* 控制弹窗容器的定位，让弹窗整体靠右 */
+    position: fixed; /* 固定定位，相对于视口，不随滚动条移动 */
+    top: 50%; /* 垂直居中（配合transform） */
+    right: 20px; /* 距离右侧20px，实现靠右效果 */
+    transform: translateY(-50%); /* 垂直居中修正，让弹窗真正居中 */
+    z-index: 9999; /* 确保弹窗在最上层，不被其他元素遮挡 */
+    max-width: 300px; /* 弹窗整体最大宽度缩小（原400px→300px） */
+    width: 100%; /* 自适应小屏幕，不超出父容器 */
+}
+
 #select-model-modal .modal-content {
-    max-width: 600px;
-    background-color: rgba(255, 255, 255, 0.9); /* 稍微更不透明一点以便阅读 */
+    max-width: 100%; /* 继承外层容器的宽度限制，不再单独设400px */
+    width: 100%; /* 占满外层容器宽度 */
+    background-color: rgba(184, 177, 177, 0.9);
     backdrop-filter: blur(15px);
+    padding: 15px; /* 适当缩小内边距，让弹窗更紧凑（可选，根据需求调整） */
 }
 
 #select-model-modal .model-item {
@@ -754,6 +768,8 @@ body {
     cursor: pointer;
     background-color: rgba(255, 255, 255, 0.7);
     border: 1px solid rgba(221, 221, 221, 0.5);
+    padding: 8px 10px; /* 缩小选项的内边距，整体更小巧 */
+    margin-bottom: 8px; /* 保持选项间距但略缩小 */
 }
 
 #select-model-modal .model-item.selected {
