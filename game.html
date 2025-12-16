@@ -87,6 +87,10 @@
                 <div><span class="key">B</span><span class="key-description">缩小模型</span></div>
                 <div><span class="key">N</span><span class="key-description">放大模型</span></div>
             </div>
+            <!-- 添加旋转控制提示 -->
+            <div class="key-row">
+                <div><span class="key">M</span><span class="key-description">旋转模型(10度)</span></div>
+            </div>
             <!-- 添加固定模型控制提示 -->
             <div class="key-row">
                 <div><span class="key">P</span><span class="key-description">固定模型</span></div>
@@ -336,7 +340,7 @@
         let selectedModelForMove = null;
         let selectedModelIndex = -1;
         
-        // 键盘控制
+        // 键盘控制 - 添加M键
         let keyboardControls = {
             w: false,
             s: false,
@@ -346,12 +350,14 @@
             y: false,
             b: false,
             n: false,
-            p: false
+            p: false,
+            m: false
         };
         
-        const moveSpeed = 0.2;
-        const modelMoveSpeed = 0.1;
-        const modelScaleSpeed = 0.01;
+        const moveSpeed = 0.1;
+        const modelMoveSpeed = 0.02;
+        const modelScaleSpeed = 0.005;
+        const modelRotateSpeed = 10 * Math.PI / 180; // 10度转换为弧度
         const keyboardControlsDiv = document.getElementById('keyboard-controls');
         
         // DOM元素获取
@@ -558,6 +564,11 @@
                         fixModel();
                     }
                     
+                    // 处理M键（旋转模型）
+                    if (key === 'm' && currentMoveMode === 'model' && selectedModelForMove && !isModelFixed) {
+                        rotateModel();
+                    }
+                    
                     event.preventDefault();
                 }
             });
@@ -569,6 +580,19 @@
                     event.preventDefault();
                 }
             });
+        }
+        
+        // 旋转模型
+        function rotateModel() {
+            if (!selectedModelForMove) return;
+            
+            const model = selectedModelForMove.model;
+            
+            // 绕Y轴顺时针旋转10度
+            model.rotateY(modelRotateSpeed);
+            
+            // 显示旋转提示
+            showNotification(`模型 "${selectedModelForMove.displayName}" 已顺时针旋转10度`, 1500);
         }
         
         // 处理键盘输入
@@ -1071,11 +1095,13 @@
             selectedModelIndex = modelIndex;
             isModelFixed = false;
             
+            // 更新操作状态提示
+            updateActionStatus(`正在移动: ${selectedModelForMove.displayName} (使用WSADUY移动, BN缩放, M旋转, P固定)`);
+            
             // 更新按钮状态
             confirmSelectModelBtn.disabled = false;
             
-            updateActionStatus(`正在移动: ${selectedModelForMove.displayName} (使用WSADUY移动, BN缩放, P固定)`);
-            showNotification(`已选择模型: ${selectedModelForMove.displayName}，使用WSADUY移动，BN缩放，P键固定`);
+            showNotification(`已选择模型: ${selectedModelForMove.displayName}，使用WSADUY移动，BN缩放，M旋转，P键固定`);
         }
         
         // 打开模型选择弹窗
@@ -1162,7 +1188,6 @@
             showNotification(`已选择文件: ${file.name}`);
         }
         
-        // 加载3D模型文件 - 修改以保持模型原始颜色
         // 加载3D模型文件 - 修改以保持模型原始颜色
         function loadModelFile(file) {
             if (!GLTFLoader) {
@@ -1744,7 +1769,7 @@
                         if (initThreeJS()) {
                             hideLoading();
                             if (gameContainer) gameContainer.style.display = 'block';
-                            showNotification('温馨小屋已加载！使用鼠标拖拽旋转视角，滚轮缩放，键盘WSADUY控制移动');
+                            showNotification('温馨小屋已加载！使用鼠标拖拽旋转视角，滚轮缩放，键盘WSADUY控制移动，M键旋转模型');
                             if (keyboardControlsDiv) keyboardControlsDiv.style.display = 'block';
                             if (currentAction) currentAction.style.display = 'flex';
                         } else {
