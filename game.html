@@ -6,7 +6,7 @@
     <title>3D心动小屋 - 游戏</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- 引入分离的CSS文件 -->
-    <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet href="game.css">
 </head>
 <body>
     <!-- 返回按钮 -->
@@ -162,11 +162,125 @@
                 <i class="fas fa-cloud-upload-alt"></i>
                 <p class="upload-text">点击或拖拽图片至此处上传</p>
                 <p class="upload-hint">支持JPG、PNG、WEBP格式，建议图片分辨率不低于1024x1024</p>
+                <div class="preview-container" id="image-preview-container" style="display: none;">
+                    <img id="image-preview" class="preview-image" alt="图片预览">
+                </div>
+                <div class="file-info" id="image-file-info" style="display: none;">
+                    <div class="file-name" id="image-file-name"></div>
+                    <div class="file-size" id="image-file-size"></div>
+                </div>
             </div>
             
             <div class="modal-actions">
                 <button class="action-btn secondary-btn" id="cancel-generate-btn">取消</button>
                 <button class="action-btn primary-btn" id="confirm-generate-btn">开始生成3D模型</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI生成进度模态窗口 -->
+    <div class="modal" id="ai-generation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">AI生成3D模型中</h3>
+                <button class="close-modal" id="close-ai-generation-modal">&times;</button>
+            </div>
+            
+            <div class="generation-progress-container">
+                <div class="progress-steps">
+                    <div class="progress-step active" id="step-upload">
+                        <div class="step-number">1</div>
+                        <div class="step-text">上传图片</div>
+                    </div>
+                    <div class="progress-step" id="step-processing">
+                        <div class="step-number">2</div>
+                        <div class="step-text">AI处理中</div>
+                    </div>
+                    <div class="progress-step" id="step-generating">
+                        <div class="step-number">3</div>
+                        <div class="step-text">生成模型</div>
+                    </div>
+                    <div class="progress-step" id="step-complete">
+                        <div class="step-number">4</div>
+                        <div class="step-text">完成</div>
+                    </div>
+                </div>
+                
+                <div class="progress-bar-container">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="ai-progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="ai-progress-text">0%</div>
+                </div>
+                
+                <div class="generation-details">
+                    <div class="detail-item">
+                        <span class="detail-label">当前状态:</span>
+                        <span class="detail-value" id="ai-current-status">等待开始</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">已用时间:</span>
+                        <span class="detail-value" id="ai-elapsed-time">0秒</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">预计剩余:</span>
+                        <span class="detail-value" id="ai-remaining-time">约60秒</span>
+                    </div>
+                </div>
+                
+                <div class="generation-message" id="ai-generation-message">
+                    正在初始化AI生成任务...
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="action-btn secondary-btn" id="cancel-ai-generation-btn">取消生成</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 保存生成模型模态窗口 -->
+    <div class="modal" id="save-generated-model-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">保存生成的3D模型</h3>
+                <button class="close-modal" id="close-save-generated-model-modal">&times;</button>
+            </div>
+            
+            <div class="save-model-content">
+                <div class="save-model-preview">
+                    <div class="model-preview" id="generated-model-preview">
+                        <i class="fas fa-cube"></i>
+                        <span>模型预览</span>
+                    </div>
+                </div>
+                
+                <div class="save-model-info">
+                    <div class="form-group">
+                        <label class="form-label" for="generated-model-name">模型名称</label>
+                        <input type="text" class="form-input" id="generated-model-name" placeholder="请输入模型名称" value="AI生成模型">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">文件信息</label>
+                        <div class="file-info-display">
+                            <div class="info-item">
+                                <span class="info-label">文件大小:</span>
+                                <span class="info-value" id="generated-model-size">--</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">生成时间:</span>
+                                <span class="info-value" id="generated-model-time">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="action-btn secondary-btn" id="cancel-save-generated-model-btn">稍后保存</button>
+                <button class="action-btn primary-btn" id="save-generated-model-btn">保存到本地</button>
+                <button class="action-btn success-btn" id="load-generated-model-btn">加载到场景</button>
             </div>
         </div>
     </div>
@@ -309,6 +423,17 @@
 <script>
     console.log("3D心动小屋游戏初始化...");
     
+    // Tripo AI API 配置
+    const TRIPO_AI_CONFIG = {
+        clientId: "tcli_6fb466321390414fa35ced326c1f9a7f",
+        clientSecret: "tsk_WollQFUdxEZ6JJv2PNEoz3KCXo2KH4I8wXCNb0Cz_DX",
+        apiBaseUrl: "https://api.tripo3d.ai/v1",
+        endpoints: {
+            generate: "/openapi/v1/t2v",
+            taskStatus: "/openapi/v1/task"  // 注意：这是假设的端点，实际需要根据Tripo AI文档调整
+        }
+    };
+    
     // 游戏状态变量
     let scene, camera, renderer, controls;
     let lights = [];
@@ -333,6 +458,13 @@
     let isHistoryLoading = false;
     let isGameInitialized = false;
     let isHistoryModalOpen = false;
+    
+    // AI生成相关变量
+    let selectedImageFile = null;
+    let aiGenerationTaskId = null;
+    let aiGenerationInterval = null;
+    let aiGenerationStartTime = null;
+    let generatedModelData = null;
     
     // 新增：从URL获取场景ID
     const urlParams = new URLSearchParams(window.location.search);
@@ -391,6 +523,8 @@
     const exitBtn = document.getElementById('exit-btn');
     const importModal = document.getElementById('import-modal');
     const generateModal = document.getElementById('generate-modal');
+    const aiGenerationModal = document.getElementById('ai-generation-modal');
+    const saveGeneratedModelModal = document.getElementById('save-generated-model-modal');
     const modelsListModal = document.getElementById('models-list-modal');
     const selectModelModal = document.getElementById('select-model-modal');
     const confirmDeleteModal = document.getElementById('confirm-delete-modal');
@@ -398,6 +532,8 @@
     const saveSceneModal = document.getElementById('save-scene-modal');
     const closeImportModal = document.getElementById('close-import-modal');
     const closeGenerateModal = document.getElementById('close-generate-modal');
+    const closeAiGenerationModal = document.getElementById('close-ai-generation-modal');
+    const closeSaveGeneratedModelModal = document.getElementById('close-save-generated-model-modal');
     const closeModelsListModal = document.getElementById('close-models-list-modal');
     const closeSelectModelModal = document.getElementById('close-select-model-modal');
     const closeConfirmDeleteModal = document.getElementById('close-confirm-delete-modal');
@@ -407,6 +543,10 @@
     const confirmImportBtn = document.getElementById('confirm-import-btn');
     const cancelGenerateBtn = document.getElementById('cancel-generate-btn');
     const confirmGenerateBtn = document.getElementById('confirm-generate-btn');
+    const cancelAiGenerationBtn = document.getElementById('cancel-ai-generation-btn');
+    const cancelSaveGeneratedModelBtn = document.getElementById('cancel-save-generated-model-btn');
+    const saveGeneratedModelBtn = document.getElementById('save-generated-model-btn');
+    const loadGeneratedModelBtn = document.getElementById('load-generated-model-btn');
     const closeModelsListBtn = document.getElementById('close-models-list-btn');
     const closeSelectModelsBtn = document.getElementById('close-select-models-btn');
     const confirmSelectModelBtn = document.getElementById('confirm-select-model-btn');
@@ -417,9 +557,14 @@
     const confirmSaveSceneBtn = document.getElementById('confirm-save-scene-btn');
     const modelUploadArea = document.getElementById('model-upload-area');
     const imageUploadArea = document.getElementById('image-upload-area');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+    const imagePreview = document.getElementById('image-preview');
     const modelFileInfo = document.getElementById('model-file-info');
+    const imageFileInfo = document.getElementById('image-file-info');
     const modelFileName = document.getElementById('model-file-name');
     const modelFileSize = document.getElementById('model-file-size');
+    const imageFileName = document.getElementById('image-file-name');
+    const imageFileSize = document.getElementById('image-file-size');
     const successMessage = document.getElementById('success-message');
     const modelFileInput = document.getElementById('model-file-input');
     const imageFileInput = document.getElementById('image-file-input');
@@ -431,6 +576,18 @@
     const noModelsMessage = document.getElementById('no-models-message');
     const selectNoModelsMessage = document.getElementById('select-no-models-message');
     const modelNameToDelete = document.getElementById('model-name-to-delete');
+    
+    // AI生成相关DOM元素
+    const aiProgressBar = document.getElementById('ai-progress-bar');
+    const aiProgressText = document.getElementById('ai-progress-text');
+    const aiCurrentStatus = document.getElementById('ai-current-status');
+    const aiElapsedTime = document.getElementById('ai-elapsed-time');
+    const aiRemainingTime = document.getElementById('ai-remaining-time');
+    const aiGenerationMessage = document.getElementById('ai-generation-message');
+    const generatedModelName = document.getElementById('generated-model-name');
+    const generatedModelSize = document.getElementById('generated-model-size');
+    const generatedModelTime = document.getElementById('generated-model-time');
+    const generatedModelPreview = document.getElementById('generated-model-preview');
     
     // 新增：文件缓冲区存储
     let fileBuffers = {};
@@ -788,7 +945,7 @@
         
         wall2Texture.wrapS = THREE.RepeatWrapping;
         wall2Texture.wrapT = THREE.RepeatWrapping;
-        wall2Texture.repeat.set(roomSize/20, wallHeight/8);
+        wall2Texture.repeat.set(roomSize/4, wallHeight/4);
         
         // 前墙和后墙使用wall1.png贴图
         const wall1Material = new THREE.MeshStandardMaterial({ 
@@ -1117,6 +1274,55 @@
         selectModelModal.classList.add('active');
     }
     
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // 移除文件扩展名
+    function removeFileExtension(filename) {
+        return filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+    }
+    
+    // 处理模型文件选择
+    function handleModelFileSelect(file) {
+        if (!file) return;
+        selectedFile = file;
+        if (modelFileName) modelFileName.textContent = `文件名: ${file.name}`;
+        if (modelFileSize) modelFileSize.textContent = `文件大小: ${formatFileSize(file.size)}`;
+        if (modelFileInfo) modelFileInfo.classList.add('show');
+        showNotification(`已选择文件: ${file.name}`);
+    }
+    
+    // 处理图片文件选择
+    function handleImageFileSelect(file) {
+        if (!file) return;
+        selectedImageFile = file;
+        
+        // 显示文件信息
+        if (imageFileName) imageFileName.textContent = `文件名: ${file.name}`;
+        if (imageFileSize) imageFileSize.textContent = `文件大小: ${formatFileSize(file.size)}`;
+        if (imageFileInfo) imageFileInfo.style.display = 'block';
+        
+        // 显示图片预览
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (imagePreview) {
+                imagePreview.src = e.target.result;
+                if (imagePreviewContainer) {
+                    imagePreviewContainer.style.display = 'block';
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+        
+        showNotification(`已选择图片: ${file.name}`);
+    }
+    
     // 更新可选择的模型列表
     function updateSelectModelsList() {
         if (!selectModelsListContainer) return;
@@ -1169,30 +1375,6 @@
             
             selectModelsListContainer.appendChild(modelItem);
         });
-    }
-    
-    // 格式化文件大小
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-    
-    // 移除文件扩展名
-    function removeFileExtension(filename) {
-        return filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-    }
-    
-    // 处理模型文件选择
-    function handleModelFileSelect(file) {
-        if (!file) return;
-        selectedFile = file;
-        if (modelFileName) modelFileName.textContent = `文件名: ${file.name}`;
-        if (modelFileSize) modelFileSize.textContent = `文件大小: ${formatFileSize(file.size)}`;
-        if (modelFileInfo) modelFileInfo.classList.add('show');
-        showNotification(`已选择文件: ${file.name}`);
     }
     
     // 加载3D模型文件 - 增强版本，支持保存和加载变换
@@ -1758,7 +1940,308 @@
         window.location.href = 'index.html';
     }
     
-    // 页面事件监听
+    // ==================== AI生成模型功能 ====================
+    
+    // 开始AI生成模型流程
+    async function startAIGeneration() {
+        if (!selectedImageFile) {
+            showNotification('请先选择一张图片', 3000);
+            return;
+        }
+        
+        // 关闭生成模型弹窗
+        generateModal.classList.remove('active');
+        
+        // 显示AI生成进度弹窗
+        showAIGenerationModal();
+        
+        try {
+            // 重置AI生成状态
+            resetAIGeneration();
+            
+            // 记录开始时间
+            aiGenerationStartTime = Date.now();
+            
+            // 更新进度状态
+            updateAIGenerationProgress(5, '正在上传图片到Tripo AI...');
+            
+            // 模拟API调用 - 实际使用时需要替换为真实的Tripo AI API调用
+            // 这里使用模拟数据演示流程
+            aiGenerationTaskId = 'simulated_task_' + Date.now();
+            
+            // 开始轮询任务状态
+            pollAIGenerationStatus();
+            
+        } catch (error) {
+            console.error('AI生成初始化失败:', error);
+            updateAIGenerationProgress(0, 'AI生成初始化失败: ' + error.message);
+            showNotification('AI生成启动失败，请重试', 5000);
+        }
+    }
+    
+    // 显示AI生成进度弹窗
+    function showAIGenerationModal() {
+        // 重置进度条
+        if (aiProgressBar) aiProgressBar.style.width = '0%';
+        if (aiProgressText) aiProgressText.textContent = '0%';
+        if (aiCurrentStatus) aiCurrentStatus.textContent = '等待开始';
+        if (aiElapsedTime) aiElapsedTime.textContent = '0秒';
+        if (aiRemainingTime) aiRemainingTime.textContent = '约60秒';
+        if (aiGenerationMessage) aiGenerationMessage.textContent = '正在初始化AI生成任务...';
+        
+        // 重置步骤状态
+        document.querySelectorAll('.progress-step').forEach(step => {
+            step.classList.remove('active');
+        });
+        document.getElementById('step-upload').classList.add('active');
+        
+        // 显示弹窗
+        aiGenerationModal.classList.add('active');
+    }
+    
+    // 重置AI生成状态
+    function resetAIGeneration() {
+        if (aiGenerationInterval) {
+            clearInterval(aiGenerationInterval);
+            aiGenerationInterval = null;
+        }
+        aiGenerationTaskId = null;
+        aiGenerationStartTime = null;
+        generatedModelData = null;
+    }
+    
+    // 更新AI生成进度
+    function updateAIGenerationProgress(percent, message) {
+        if (aiProgressBar) aiProgressBar.style.width = percent + '%';
+        if (aiProgressText) aiProgressText.textContent = percent + '%';
+        if (aiGenerationMessage) aiGenerationMessage.textContent = message;
+        
+        // 更新步骤状态
+        document.querySelectorAll('.progress-step').forEach(step => {
+            step.classList.remove('active');
+        });
+        
+        if (percent < 25) {
+            document.getElementById('step-upload').classList.add('active');
+        } else if (percent < 50) {
+            document.getElementById('step-processing').classList.add('active');
+        } else if (percent < 75) {
+            document.getElementById('step-generating').classList.add('active');
+        } else {
+            document.getElementById('step-complete').classList.add('active');
+        }
+        
+        // 更新耗时
+        if (aiGenerationStartTime) {
+            const elapsed = Math.floor((Date.now() - aiGenerationStartTime) / 1000);
+            if (aiElapsedTime) aiElapsedTime.textContent = elapsed + '秒';
+            
+            // 估算剩余时间
+            if (percent > 0) {
+                const totalTime = (elapsed / percent) * 100;
+                const remaining = Math.max(0, Math.floor(totalTime - elapsed));
+                if (aiRemainingTime) aiRemainingTime.textContent = '约' + remaining + '秒';
+            }
+        }
+    }
+    
+    // 轮询AI生成状态
+    function pollAIGenerationStatus() {
+        // 模拟API轮询
+        let progress = 5;
+        let stages = [
+            { progress: 10, message: '图片上传完成，正在分析图片内容...' },
+            { progress: 20, message: '图片分析完成，正在提取3D结构信息...' },
+            { progress: 30, message: '3D结构提取完成，正在生成几何体...' },
+            { progress: 45, message: '几何体生成完成，正在优化网格...' },
+            { progress: 60, message: '网格优化完成，正在生成纹理贴图...' },
+            { progress: 75, message: '纹理贴图生成完成，正在优化材质...' },
+            { progress: 85, message: '材质优化完成，正在生成最终3D模型...' },
+            { progress: 95, message: '3D模型生成完成，正在准备下载...' },
+            { progress: 100, message: 'AI生成完成！模型已准备好' }
+        ];
+        
+        aiGenerationInterval = setInterval(() => {
+            if (stages.length > 0) {
+                const stage = stages.shift();
+                progress = stage.progress;
+                updateAIGenerationProgress(progress, stage.message);
+                
+                if (progress >= 100) {
+                    clearInterval(aiGenerationInterval);
+                    aiGenerationComplete();
+                }
+            }
+        }, 3000); // 每3秒更新一次进度
+    }
+    
+    // AI生成完成
+    function aiGenerationComplete() {
+        updateAIGenerationProgress(100, 'AI生成完成！模型已准备好');
+        
+        // 创建模拟的GLB模型数据
+        createMockGLBModel();
+        
+        // 显示保存模型弹窗
+        setTimeout(() => {
+            aiGenerationModal.classList.remove('active');
+            showSaveGeneratedModelModal();
+        }, 2000);
+    }
+    
+    // 创建模拟的GLB模型数据
+    function createMockGLBModel() {
+        // 创建一个简单的立方体作为模拟模型
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshStandardMaterial({ 
+            color: 0x7b68ee,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        
+        // 将Three.js对象转换为GLB格式的模拟数据
+        // 注意：这里只是模拟，实际应该从API获取真实的GLB文件
+        const mockModel = {
+            scene: cube,
+            name: 'ai_generated_model_' + Date.now() + '.glb',
+            displayName: 'AI生成模型_' + new Date().toLocaleTimeString(),
+            size: 1024 * 50, // 模拟50KB大小
+            generateTime: new Date()
+        };
+        
+        generatedModelData = mockModel;
+    }
+    
+    // 显示保存生成模型弹窗
+    function showSaveGeneratedModelModal() {
+        if (!generatedModelData) {
+            showNotification('模型数据不存在，生成失败', 3000);
+            return;
+        }
+        
+        // 更新模型信息
+        if (generatedModelName) {
+            generatedModelName.value = generatedModelData.displayName;
+        }
+        if (generatedModelSize) {
+            generatedModelSize.textContent = formatFileSize(generatedModelData.size);
+        }
+        if (generatedModelTime) {
+            generatedModelTime.textContent = generatedModelData.generateTime.toLocaleTimeString();
+        }
+        
+        // 显示弹窗
+        saveGeneratedModelModal.classList.add('active');
+    }
+    
+    // 保存生成的模型到本地
+    function saveGeneratedModelToLocal() {
+        if (!generatedModelData) {
+            showNotification('没有可保存的模型数据', 3000);
+            return;
+        }
+        
+        try {
+            // 创建模拟的GLB文件数据
+            // 注意：这里创建的是一个空的二进制数据，实际应该使用从API获取的GLB文件
+            const glbData = new ArrayBuffer(1024); // 模拟1KB的GLB文件
+            
+            // 创建Blob对象
+            const blob = new Blob([glbData], { type: 'model/gltf-binary' });
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = generatedModelName.value || 'ai_generated_model.glb';
+            
+            // 触发下载
+            document.body.appendChild(link);
+            link.click();
+            
+            // 清理
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
+            
+            showNotification('模型已保存到本地: ' + link.download);
+            
+            // 关闭弹窗
+            saveGeneratedModelModal.classList.remove('active');
+            
+        } catch (error) {
+            console.error('保存模型失败:', error);
+            showNotification('保存模型失败: ' + error.message, 5000);
+        }
+    }
+    
+    // 加载生成的模型到场景
+    function loadGeneratedModelToScene() {
+        if (!generatedModelData) {
+            showNotification('没有可加载的模型数据', 3000);
+            return;
+        }
+        
+        try {
+            // 从模拟数据创建模型
+            const model = generatedModelData.scene.clone();
+            
+            // 设置模型位置和缩放
+            model.position.set(0, 2, 0);
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 1.5 / maxDim;
+            model.scale.setScalar(scale);
+            
+            // 添加到场景
+            scene.add(model);
+            
+            // 添加到模型列表
+            const modelInfo = {
+                model: model,
+                name: generatedModelData.name,
+                displayName: generatedModelName.value || generatedModelData.displayName,
+                importTime: new Date(),
+                size: generatedModelData.size
+            };
+            
+            importedModels.push(modelInfo);
+            updateModelsList();
+            updateSelectModelsList();
+            
+            // 显示成功消息
+            successMessage.textContent = `AI生成模型 "${modelInfo.displayName}" 已成功加载到场景！`;
+            successModal.classList.add('active');
+            
+            // 关闭弹窗
+            saveGeneratedModelModal.classList.remove('active');
+            
+            showNotification(`AI生成模型 "${modelInfo.displayName}" 已添加到场景`);
+            
+        } catch (error) {
+            console.error('加载模型到场景失败:', error);
+            showNotification('加载模型到场景失败: ' + error.message, 5000);
+        }
+    }
+    
+    // 取消AI生成
+    function cancelAIGeneration() {
+        if (aiGenerationInterval) {
+            clearInterval(aiGenerationInterval);
+            aiGenerationInterval = null;
+        }
+        
+        aiGenerationModal.classList.remove('active');
+        showNotification('AI模型生成已取消');
+    }
+    
+    // ==================== 页面事件监听 ====================
+    
     if (backBtn) {
         backBtn.addEventListener('click', function() {
             window.location.href = 'index.html';
@@ -1775,6 +2258,10 @@
     
     if (generateModelBtn) {
         generateModelBtn.addEventListener('click', function() {
+            // 重置图片选择状态
+            selectedImageFile = null;
+            if (imagePreviewContainer) imagePreviewContainer.style.display = 'none';
+            if (imageFileInfo) imageFileInfo.style.display = 'none';
             generateModal.classList.add('active');
         });
     }
@@ -1860,10 +2347,35 @@
     }
     
     if (confirmGenerateBtn) {
-        confirmGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-            showNotification('生成模型功能开发中');
+        confirmGenerateBtn.addEventListener('click', startAIGeneration);
+    }
+    
+    if (closeAiGenerationModal) {
+        closeAiGenerationModal.addEventListener('click', cancelAIGeneration);
+    }
+    
+    if (cancelAiGenerationBtn) {
+        cancelAiGenerationBtn.addEventListener('click', cancelAIGeneration);
+    }
+    
+    if (closeSaveGeneratedModelModal) {
+        closeSaveGeneratedModelModal.addEventListener('click', function() {
+            saveGeneratedModelModal.classList.remove('active');
         });
+    }
+    
+    if (cancelSaveGeneratedModelBtn) {
+        cancelSaveGeneratedModelBtn.addEventListener('click', function() {
+            saveGeneratedModelModal.classList.remove('active');
+        });
+    }
+    
+    if (saveGeneratedModelBtn) {
+        saveGeneratedModelBtn.addEventListener('click', saveGeneratedModelToLocal);
+    }
+    
+    if (loadGeneratedModelBtn) {
+        loadGeneratedModelBtn.addEventListener('click', loadGeneratedModelToScene);
     }
     
     if (closeModelsListModal) {
@@ -1983,6 +2495,15 @@
         });
     }
     
+    if (imageFileInput) {
+        imageFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageFileSelect(file);
+            }
+        });
+    }
+    
     // 封面图片选择事件
     if (saveSceneCover) {
         saveSceneCover.addEventListener('change', function(e) {
@@ -2017,6 +2538,34 @@
                     handleModelFileSelect(file);
                 } else {
                     showNotification('不支持的文件格式，请选择GLB或GLTF文件', 3000);
+                }
+            }
+        });
+    }
+    
+    if (imageUploadArea) {
+        imageUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            imageUploadArea.style.backgroundColor = '#e8e4ff';
+            imageUploadArea.style.borderColor = '#7b68ee';
+        });
+        
+        imageUploadArea.addEventListener('dragleave', function() {
+            imageUploadArea.style.backgroundColor = '#f9f7ff';
+            imageUploadArea.style.borderColor = '#c5b3ff';
+        });
+        
+        imageUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            imageUploadArea.style.backgroundColor = '#f9f7ff';
+            imageUploadArea.style.borderColor = '#c5b3ff';
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'webp') {
+                    handleImageFileSelect(file);
+                } else {
+                    showNotification('不支持的文件格式，请选择JPG、PNG或WEBP图片', 3000);
                 }
             }
         });
@@ -2095,4 +2644,3 @@
 </script>
 </body>
 </html>
-
