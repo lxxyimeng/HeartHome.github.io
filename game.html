@@ -5,727 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D心动小屋 - 游戏</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
-        }
-        
-        body {
-            overflow: hidden;
-            color: #333;
-        }
-        
-        /* 加载屏幕 */
-        #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            color: white;
-        }
-        
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #7b68ee;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .loading-text {
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-        }
-        
-        .progress-container {
-            width: 300px;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #7b68ee, #ff6b8b);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-        
-        .time-estimate {
-            font-size: 0.9rem;
-            color: #aaa;
-            margin-top: 10px;
-        }
-        
-        /* 游戏容器 */
-        #game-container {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-        
-        #game-canvas {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        
-        /* 游戏UI控制面板 */
-        .game-ui {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 10;
-        }
-        
-        .game-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #7b68ee;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .game-btn:hover {
-            background-color: #7b68ee;
-            color: white;
-            transform: scale(1.1);
-        }
-        
-        /* 模型控制按钮 */
-        .model-controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-            z-index: 10;
-        }
-        
-        .control-btn {
-            background-color: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 25px;
-            color: #7b68ee;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .control-btn:hover {
-            background-color: #7b68ee;
-            color: white;
-            transform: translateY(-2px);
-        }
-        
-        /* 提示信息 */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: white;
-            border-radius: 10px;
-            padding: 15px 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 1000;
-            transform: translateX(120%);
-            transition: transform 0.4s ease;
-        }
-        
-        .notification.show {
-            transform: translateX(0);
-        }
-        
-        .notification i {
-            color: #7b68ee;
-            font-size: 1.2rem;
-        }
-        
-        /* 模态窗口 */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        
-        .modal.active {
-            opacity: 1;
-            pointer-events: all;
-            display: flex;
-        }
-        
-        .modal-content {
-            background-color: white;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
-            padding: 30px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            transform: translateY(20px);
-            transition: transform 0.4s ease;
-        }
-        
-        .modal.active .modal-content {
-            transform: translateY(0);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .modal-title {
-            font-size: 1.5rem;
-            color: #7b68ee;
-            font-weight: 700;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: #999;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        
-        .close-modal:hover {
-            color: #ff4d6d;
-        }
-        
-        .upload-area {
-            border: 3px dashed #c5b3ff;
-            border-radius: 15px;
-            padding: 40px 20px;
-            text-align: center;
-            background-color: #f9f7ff;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 20px;
-        }
-        
-        .upload-area:hover {
-            background-color: #f0ecff;
-            border-color: #7b68ee;
-        }
-        
-        .upload-area i {
-            font-size: 3rem;
-            color: #7b68ee;
-            margin-bottom: 15px;
-        }
-        
-        .upload-text {
-            font-size: 1.1rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        
-        .upload-hint {
-            font-size: 0.9rem;
-            color: #999;
-        }
-        
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .action-btn {
-            padding: 12px 25px;
-            border-radius: 50px;
-            border: none;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .primary-btn {
-            background-color: #7b68ee;
-            color: white;
-        }
-        
-        .primary-btn:hover {
-            background-color: #6a58d3;
-        }
-        
-        .secondary-btn {
-            background-color: #f0f0f0;
-            color: #666;
-        }
-        
-        .secondary-btn:hover {
-            background-color: #e0e0e0;
-        }
-        
-        /* 控制说明 */
-        .controls-info {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            z-index: 5;
-        }
-        
-        .controls-info p {
-            margin: 5px 0;
-        }
-        
-        /* 键盘控制提示样式 */
-        .keyboard-controls {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            z-index: 5;
-        }
-        
-        .keyboard-controls h3 {
-            margin-bottom: 10px;
-            color: #7b68ee;
-            font-size: 1rem;
-        }
-        
-        .key-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-        
-        .key {
-            display: inline-block;
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            min-width: 30px;
-            text-align: center;
-        }
-        
-        .key-description {
-            margin-left: 10px;
-        }
-        
-        /* 文件输入 */
-        .file-input {
-            display: none;
-        }
-        
-        /* 菜单面板 */
-        .menu-panel {
-            position: fixed;
-            top: 80px;
-            right: 80px;
-            background-color: white;
-            border-radius: 15px;
-            padding: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-            z-index: 10;
-            transform: translateY(-20px);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
-        
-        .menu-panel.active {
-            transform: translateY(0);
-            opacity: 1;
-            pointer-events: all;
-        }
-        
-        .menu-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .menu-item:hover {
-            background-color: #f5f5ff;
-        }
-        
-        .menu-item i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-            color: #7b68ee;
-        }
-        
-        .menu-divider {
-            height: 1px;
-            background-color: #eee;
-            margin: 10px 0;
-        }
-        
-        /* 导入模型模态窗口样式 */
-        #import-modal .upload-area {
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        #import-modal .file-info {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f0f8ff;
-            border-radius: 8px;
-            width: 100%;
-            text-align: left;
-            display: none;
-        }
-        
-        #import-modal .file-info.show {
-            display: block;
-        }
-        
-        #import-modal .file-name {
-            font-weight: 600;
-            color: #7b68ee;
-            margin-bottom: 5px;
-        }
-        
-        #import-modal .file-size {
-            font-size: 0.9rem;
-            color: #666;
-        }
-        
-        /* 模型列表模态窗口样式 */
-        #models-list-modal .models-list-container {
-            max-height: 400px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            padding-right: 10px;
-        }
-        
-        .models-list-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .models-list-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        
-        .models-list-container::-webkit-scrollbar-thumb {
-            background: #c5b3ff;
-            border-radius: 3px;
-        }
-        
-        .models-list-container::-webkit-scrollbar-thumb:hover {
-            background: #7b68ee;
-        }
-        
-        .model-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px;
-            background-color: #f9f7ff;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            transition: all 0.3s ease;
-            border: 1px solid #eee;
-        }
-        
-        .model-item:hover {
-            background-color: #f0ecff;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 10px rgba(123, 104, 238, 0.1);
-        }
-        
-        .model-info {
-            flex: 1;
-        }
-        
-        .model-name {
-            font-weight: 600;
-            color: #7b68ee;
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
-        
-        .model-time {
-            font-size: 0.85rem;
-            color: #888;
-        }
-        
-        .delete-model-btn {
-            background-color: #ff6b8b;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-        
-        .delete-model-btn:hover {
-            background-color: #ff4d6d;
-            transform: scale(1.05);
-        }
-        
-        .no-models-message {
-            text-align: center;
-            padding: 40px 20px;
-            color: #888;
-            font-size: 1.1rem;
-        }
-        
-        .no-models-message i {
-            font-size: 3rem;
-            color: #ddd;
-            margin-bottom: 15px;
-            display: block;
-        }
-        
-        /* 确认删除模态窗口样式 */
-        #confirm-delete-modal .confirm-text {
-            text-align: center;
-            padding: 20px 0;
-            font-size: 1.1rem;
-            color: #666;
-        }
-        
-        .model-name-to-delete {
-            color: #7b68ee;
-            font-weight: 600;
-        }
-        
-        /* 成功模态窗口 */
-        #success-modal .modal-content {
-            text-align: center;
-        }
-        
-        #success-modal p {
-            margin: 20px 0;
-            font-size: 1.1rem;
-            color: #666;
-        }
-        
-        /* 保存场景模态窗口 */
-        #save-scene-modal .save-form {
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #7b68ee;
-        }
-        
-        .form-input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border 0.3s;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: #7b68ee;
-        }
-        
-        .preview-section {
-            margin-top: 20px;
-        }
-        
-        .preview-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-        }
-        
-        .preview-image {
-            width: 200px;
-            height: 150px;
-            border-radius: 8px;
-            overflow: hidden;
-            background-color: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .preview-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .default-preview {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #888;
-        }
-        
-        .default-preview i {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-        
-        /* 返回按钮 */
-        .back-btn {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background-color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 25px;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #7b68ee;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 10;
-        }
-        
-        .back-btn:hover {
-            background-color: #7b68ee;
-            color: white;
-            transform: translateY(-2px);
-        }
-        
-        @media (max-width: 768px) {
-            .controls-info {
-                font-size: 0.8rem;
-                padding: 10px;
-                bottom: 10px;
-                left: 10px;
-            }
-            
-            .keyboard-controls {
-                left: 10px;
-                right: 10px;
-                top: auto;
-                bottom: 100px;
-                width: calc(100% - 20px);
-            }
-            
-            .menu-panel {
-                width: 200px;
-            }
-            
-            .model-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .delete-model-btn {
-                align-self: flex-end;
-            }
-            
-            .modal-content {
-                width: 95%;
-                padding: 20px;
-            }
-            
-            .game-btn {
-                width: 45px;
-                height: 45px;
-            }
-            
-            .control-btn {
-                padding: 10px 20px;
-                font-size: 0.9rem;
-            }
-            
-            .model-controls {
-                bottom: 10px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-        }
-    </style>
+    <!-- 引入分离的CSS文件 -->
+    <link rel="stylesheet" href="game.css">
 </head>
 <body>
     <!-- 返回按钮 -->
@@ -801,6 +82,15 @@
                 <div><span class="key">U</span><span class="key-description">向前移动</span></div>
                 <div><span class="key">Y</span><span class="key-description">向后移动</span></div>
             </div>
+            <!-- 添加缩放控制提示 -->
+            <div class="key-row">
+                <div><span class="key">B</span><span class="key-description">缩小模型</span></div>
+                <div><span class="key">N</span><span class="key-description">放大模型</span></div>
+            </div>
+            <!-- 添加固定模型控制提示 -->
+            <div class="key-row">
+                <div><span class="key">P</span><span class="key-description">固定模型</span></div>
+            </div>
         </div>
         
         <!-- 控制说明 -->
@@ -816,10 +106,18 @@
                 <i class="fas fa-lightbulb"></i>
                 切换灯光
             </button>
-            <button class="control-btn" id="export-scene-btn">
-                <i class="fas fa-save"></i>
-                保存场景
+            <!-- 将"保存场景"按钮改为"移动视角/模型" -->
+            <button class="control-btn" id="toggle-move-mode-btn">
+                <i class="fas fa-arrows-alt"></i>
+                <span id="move-mode-text">移动视角</span>
             </button>
+            <span id="current-mode-indicator" style="margin-left: 5px; color: #7b68ee; font-weight: bold;">(视角)</span>
+        </div>
+        
+        <!-- 当前操作状态提示 -->
+        <div class="current-action" id="current-action">
+            <i class="fas fa-info-circle"></i>
+            <span id="action-text">当前模式: 移动视角</span>
         </div>
     </div>
     
@@ -869,7 +167,7 @@
         </div>
     </div>
     
-    <!-- 模型列表模态窗口 -->
+    <!-- 模型列表模态窗口（用于删除模型） -->
     <div class="modal" id="models-list-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -965,6 +263,29 @@
         </div>
     </div>
     
+    <!-- 模型选择模态窗口（用于移动模型） -->
+    <div class="modal" id="select-model-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">选择要移动的模型</h3>
+                <button class="close-modal" id="close-select-model-modal">&times;</button>
+            </div>
+            
+            <div class="models-list-container" id="select-models-list-container">
+                <!-- 可移动的模型列表将动态添加到这里 -->
+                <div class="no-models-message" id="select-no-models-message">
+                    <i class="fas fa-cube"></i>
+                    <p>还没有导入任何模型</p>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="action-btn secondary-btn" id="close-select-models-btn">取消</button>
+                <button class="action-btn primary-btn" id="confirm-select-model-btn" disabled>选择此模型</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- 提示信息 -->
     <div class="notification" id="notification">
         <i class="fas fa-info-circle"></i>
@@ -980,6 +301,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
     
+    <!-- JavaScript部分 -->
     <script>
         console.log("3D心动小屋游戏初始化...");
         
@@ -1007,15 +329,29 @@
         let isHistoryLoading = false;
         let isGameInitialized = false;
         let isHistoryModalOpen = false;
+        
+        // 新增：控制模式相关变量
+        let currentMoveMode = 'view'; // 'view' 或 'model'
+        let isModelFixed = false;
+        let selectedModelForMove = null;
+        let selectedModelIndex = -1;
+        
+        // 键盘控制
         let keyboardControls = {
             w: false,
             s: false,
             a: false,
             d: false,
             u: false,
-            y: false
+            y: false,
+            b: false,
+            n: false,
+            p: false
         };
+        
         const moveSpeed = 0.2;
+        const modelMoveSpeed = 0.1;
+        const modelScaleSpeed = 0.01;
         const keyboardControlsDiv = document.getElementById('keyboard-controls');
         
         // DOM元素获取
@@ -1033,7 +369,11 @@
         const deleteModelBtn = document.getElementById('delete-model-btn');
         const menuBtn = document.getElementById('menu-btn');
         const toggleLightsBtn = document.getElementById('toggle-lights-btn');
-        const exportSceneBtn = document.getElementById('export-scene-btn');
+        const toggleMoveModeBtn = document.getElementById('toggle-move-mode-btn');
+        const moveModeText = document.getElementById('move-mode-text');
+        const currentModeIndicator = document.getElementById('current-mode-indicator');
+        const currentAction = document.getElementById('current-action');
+        const actionText = document.getElementById('action-text');
         const menuPanel = document.getElementById('menu-panel');
         const soundToggleBtn = document.getElementById('sound-toggle-btn');
         const screenshotBtn = document.getElementById('screenshot-btn');
@@ -1042,12 +382,14 @@
         const importModal = document.getElementById('import-modal');
         const generateModal = document.getElementById('generate-modal');
         const modelsListModal = document.getElementById('models-list-modal');
+        const selectModelModal = document.getElementById('select-model-modal');
         const confirmDeleteModal = document.getElementById('confirm-delete-modal');
         const successModal = document.getElementById('success-modal');
         const saveSceneModal = document.getElementById('save-scene-modal');
         const closeImportModal = document.getElementById('close-import-modal');
         const closeGenerateModal = document.getElementById('close-generate-modal');
         const closeModelsListModal = document.getElementById('close-models-list-modal');
+        const closeSelectModelModal = document.getElementById('close-select-model-modal');
         const closeConfirmDeleteModal = document.getElementById('close-confirm-delete-modal');
         const closeSuccessModal = document.getElementById('close-success-modal');
         const closeSaveSceneModal = document.getElementById('close-save-scene-modal');
@@ -1056,6 +398,8 @@
         const cancelGenerateBtn = document.getElementById('cancel-generate-btn');
         const confirmGenerateBtn = document.getElementById('confirm-generate-btn');
         const closeModelsListBtn = document.getElementById('close-models-list-btn');
+        const closeSelectModelsBtn = document.getElementById('close-select-models-btn');
+        const confirmSelectModelBtn = document.getElementById('confirm-select-model-btn');
         const cancelConfirmDeleteBtn = document.getElementById('cancel-confirm-delete-btn');
         const confirmModelDeleteBtn = document.getElementById('confirm-model-delete-btn');
         const closeSuccessBtn = document.getElementById('close-success-btn');
@@ -1073,7 +417,9 @@
         const saveSceneCover = document.getElementById('save-scene-cover');
         const coverPreview = document.getElementById('cover-preview');
         const modelsListContainer = document.getElementById('models-list-container');
+        const selectModelsListContainer = document.getElementById('select-models-list-container');
         const noModelsMessage = document.getElementById('no-models-message');
+        const selectNoModelsMessage = document.getElementById('select-no-models-message');
         const modelNameToDelete = document.getElementById('model-name-to-delete');
         
         // 显示提示信息
@@ -1085,20 +431,37 @@
             }, duration);
         }
         
+        // 显示当前操作状态
+        function updateActionStatus(message) {
+            if (actionText) {
+                actionText.textContent = message;
+            }
+        }
+        
         // 更新加载进度
         function updateProgress(percentage) {
-            progressBar.style.width = percentage + '%';
+            if (progressBar) {
+                progressBar.style.width = percentage + '%';
+            }
         }
         
         // 显示/隐藏加载界面
         function showLoading(text) {
-            loadingText.textContent = text;
-            loadingScreen.style.display = 'flex';
+            if (loadingText) {
+                loadingText.textContent = text;
+            }
+            if (loadingScreen) {
+                loadingScreen.style.display = 'flex';
+            }
         }
         
         function hideLoading() {
-            loadingScreen.style.display = 'none';
-            loadingText.textContent = '正在加载...';
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
+            if (loadingText) {
+                loadingText.textContent = '正在加载...';
+            }
         }
         
         // 初始化Three.js场景
@@ -1187,6 +550,12 @@
                 const key = event.key.toLowerCase();
                 if (keyboardControls.hasOwnProperty(key)) {
                     keyboardControls[key] = true;
+                    
+                    // 处理P键（固定模型）
+                    if (key === 'p' && currentMoveMode === 'model' && selectedModelForMove) {
+                        fixModel();
+                    }
+                    
                     event.preventDefault();
                 }
             });
@@ -1202,25 +571,67 @@
         
         // 处理键盘输入
         function handleKeyboardInput() {
-            if (!camera) return;
-            
-            const moveVector = new THREE.Vector3(0, 0, 0);
-            if (keyboardControls.w) moveVector.y += moveSpeed;
-            if (keyboardControls.s) moveVector.y -= moveSpeed;
-            if (keyboardControls.a) moveVector.x -= moveSpeed;
-            if (keyboardControls.d) moveVector.x += moveSpeed;
-            if (keyboardControls.u) moveVector.z -= moveSpeed;
-            if (keyboardControls.y) moveVector.z += moveSpeed;
-            
-            if (moveVector.length() === 0) return;
-            
-            camera.position.add(moveVector);
-            if (controls && controls.target) {
-                controls.target.add(moveVector);
+            if (currentMoveMode === 'view') {
+                // 移动视角模式
+                if (!camera) return;
+                
+                const moveVector = new THREE.Vector3(0, 0, 0);
+                if (keyboardControls.w) moveVector.y += moveSpeed;
+                if (keyboardControls.s) moveVector.y -= moveSpeed;
+                if (keyboardControls.a) moveVector.x -= moveSpeed;
+                if (keyboardControls.d) moveVector.x += moveSpeed;
+                if (keyboardControls.u) moveVector.z -= moveSpeed;
+                if (keyboardControls.y) moveVector.z += moveSpeed;
+                
+                if (moveVector.length() === 0) return;
+                
+                camera.position.add(moveVector);
+                if (controls && controls.target) {
+                    controls.target.add(moveVector);
+                }
+                if (controls && controls.update) {
+                    controls.update();
+                }
+            } else if (currentMoveMode === 'model' && selectedModelForMove && !isModelFixed) {
+                // 移动模型模式
+                handleModelMovement();
             }
-            if (controls && controls.update) {
-                controls.update();
+        }
+        
+        // 处理模型移动
+        function handleModelMovement() {
+            if (!selectedModelForMove) return;
+            
+            const model = selectedModelForMove.model;
+            
+            // 移动模型
+            if (keyboardControls.w) model.position.y += modelMoveSpeed;
+            if (keyboardControls.s) model.position.y -= modelMoveSpeed;
+            if (keyboardControls.a) model.position.x -= modelMoveSpeed;
+            if (keyboardControls.d) model.position.x += modelMoveSpeed;
+            if (keyboardControls.u) model.position.z -= modelMoveSpeed;
+            if (keyboardControls.y) model.position.z += modelMoveSpeed;
+            
+            // 缩放模型
+            if (keyboardControls.b) {
+                // 缩小模型
+                const scale = 1 - modelScaleSpeed;
+                model.scale.multiplyScalar(scale);
             }
+            if (keyboardControls.n) {
+                // 放大模型
+                const scale = 1 + modelScaleSpeed;
+                model.scale.multiplyScalar(scale);
+            }
+        }
+        
+        // 固定模型
+        function fixModel() {
+            if (!selectedModelForMove) return;
+            
+            isModelFixed = true;
+            showNotification(`模型 "${selectedModelForMove.displayName}" 已固定`);
+            updateActionStatus(`模型已固定: ${selectedModelForMove.displayName}`);
         }
         
         // 手动控制相机（备用方案）
@@ -1603,6 +1014,124 @@
             showNotification(isVisible ? '灯光已关闭' : '灯光已开启');
         }
         
+        // 切换移动模式
+        function toggleMoveMode() {
+            if (currentMoveMode === 'view') {
+                // 切换到模型移动模式
+                if (importedModels.length === 0) {
+                    showNotification('没有可移动的模型，请先导入模型', 3000);
+                    return;
+                }
+                
+                // 打开模型选择弹窗
+                openSelectModelModal();
+            } else {
+                // 切换到视角移动模式
+                switchToViewMode();
+            }
+        }
+        
+        // 切换到视角移动模式
+        function switchToViewMode() {
+            currentMoveMode = 'view';
+            moveModeText.textContent = '移动视角';
+            currentModeIndicator.textContent = '(视角)';
+            updateActionStatus('当前模式: 移动视角');
+            
+            // 重置模型选择状态
+            selectedModelForMove = null;
+            selectedModelIndex = -1;
+            isModelFixed = false;
+            
+            // 关闭模型选择弹窗
+            selectModelModal.classList.remove('active');
+            
+            showNotification('已切换到视角移动模式');
+        }
+        
+        // 切换到模型移动模式
+        function switchToModelMode(modelIndex) {
+            if (modelIndex < 0 || modelIndex >= importedModels.length) {
+                showNotification('模型选择无效', 3000);
+                return;
+            }
+            
+            currentMoveMode = 'model';
+            moveModeText.textContent = '移动模型';
+            currentModeIndicator.textContent = '(模型)';
+            
+            // 设置选中的模型
+            selectedModelForMove = importedModels[modelIndex];
+            selectedModelIndex = modelIndex;
+            isModelFixed = false;
+            
+            // 更新按钮状态
+            confirmSelectModelBtn.disabled = false;
+            
+            updateActionStatus(`正在移动: ${selectedModelForMove.displayName} (使用WSADUY移动, BN缩放, P固定)`);
+            showNotification(`已选择模型: ${selectedModelForMove.displayName}，使用WSADUY移动，BN缩放，P键固定`);
+        }
+        
+        // 打开模型选择弹窗
+        function openSelectModelModal() {
+            updateSelectModelsList();
+            selectModelModal.classList.add('active');
+        }
+        
+        // 更新可选择的模型列表
+        function updateSelectModelsList() {
+            if (!selectModelsListContainer) return;
+            
+            selectModelsListContainer.innerHTML = '';
+            
+            if (importedModels.length === 0) {
+                if (selectNoModelsMessage) {
+                    selectNoModelsMessage.style.display = 'block';
+                    selectModelsListContainer.appendChild(selectNoModelsMessage);
+                }
+                confirmSelectModelBtn.disabled = true;
+                return;
+            }
+            
+            if (selectNoModelsMessage) selectNoModelsMessage.style.display = 'none';
+            confirmSelectModelBtn.disabled = true;
+            
+            importedModels.forEach((modelInfo, index) => {
+                const modelItem = document.createElement('div');
+                modelItem.className = 'model-item';
+                modelItem.dataset.index = index;
+                
+                const time = new Date(modelInfo.importTime);
+                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                
+                modelItem.innerHTML = `
+                    <div class="model-info">
+                        <div class="model-name">${modelInfo.displayName}</div>
+                        <div class="model-time">导入时间: ${timeStr}</div>
+                    </div>
+                `;
+                
+                // 添加点击选择事件
+                modelItem.addEventListener('click', function() {
+                    // 移除之前选中的样式
+                    document.querySelectorAll('#select-models-list-container .model-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    
+                    // 添加当前选中的样式
+                    this.classList.add('selected');
+                    
+                    // 启用确认按钮
+                    confirmSelectModelBtn.disabled = false;
+                    
+                    // 存储选中的索引
+                    selectedModelIndex = index;
+                });
+                
+                selectModelsListContainer.appendChild(modelItem);
+            });
+        }
+        
         // 格式化文件大小
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
@@ -1621,9 +1150,9 @@
         function handleModelFileSelect(file) {
             if (!file) return;
             selectedFile = file;
-            modelFileName.textContent = `文件名: ${file.name}`;
-            modelFileSize.textContent = `文件大小: ${formatFileSize(file.size)}`;
-            modelFileInfo.classList.add('show');
+            if (modelFileName) modelFileName.textContent = `文件名: ${file.name}`;
+            if (modelFileSize) modelFileSize.textContent = `文件大小: ${formatFileSize(file.size)}`;
+            if (modelFileInfo) modelFileInfo.classList.add('show');
             showNotification(`已选择文件: ${file.name}`);
         }
         
@@ -1664,6 +1193,7 @@
                         };
                         importedModels.push(modelInfo);
                         updateModelsList();
+                        updateSelectModelsList();
                         hideLoading();
                         successMessage.textContent = `模型 "${modelInfo.displayName}" 已成功导入！`;
                         successModal.classList.add('active');
@@ -1687,15 +1217,19 @@
             reader.readAsArrayBuffer(file);
         }
         
-        // 更新模型列表
+        // 更新模型列表（用于删除）
         function updateModelsList() {
+            if (!modelsListContainer) return;
+            
             modelsListContainer.innerHTML = '';
             if (importedModels.length === 0) {
-                noModelsMessage.style.display = 'block';
-                modelsListContainer.appendChild(noModelsMessage);
+                if (noModelsMessage) {
+                    noModelsMessage.style.display = 'block';
+                    modelsListContainer.appendChild(noModelsMessage);
+                }
                 return;
             }
-            noModelsMessage.style.display = 'none';
+            if (noModelsMessage) noModelsMessage.style.display = 'none';
             importedModels.forEach((modelInfo, index) => {
                 const modelItem = document.createElement('div');
                 modelItem.className = 'model-item';
@@ -1728,7 +1262,7 @@
             if (index < 0 || index >= importedModels.length) return;
             const modelInfo = importedModels[index];
             modelToDeleteIndex = index;
-            modelNameToDelete.textContent = modelInfo.displayName;
+            if (modelNameToDelete) modelNameToDelete.textContent = modelInfo.displayName;
             modelsListModal.classList.remove('active');
             confirmDeleteModal.classList.add('active');
         }
@@ -1743,6 +1277,7 @@
             scene.remove(modelInfo.model);
             importedModels.splice(modelToDeleteIndex, 1);
             updateModelsList();
+            updateSelectModelsList();
             confirmDeleteModal.classList.remove('active');
             showNotification(`模型 "${modelInfo.displayName}" 已删除`, 3000);
         }
@@ -1822,7 +1357,9 @@
         // 切换声音
         function toggleSound() {
             isSoundOn = !isSoundOn;
-            soundToggleBtn.querySelector('span').textContent = `声音: ${isSoundOn ? '开' : '关'}`;
+            if (soundToggleBtn) {
+                soundToggleBtn.querySelector('span').textContent = `声音: ${isSoundOn ? '开' : '关'}`;
+            }
             showNotification(`声音已${isSoundOn ? '开启' : '关闭'}`);
         }
         
@@ -1846,287 +1383,273 @@
             window.location.href = 'index.html';
         }
         
-        // ==== 修复：确保菜单按钮可点击 ====
-        
-        // 修复菜单面板的CSS
-        function fixMenuCSS() {
-            const style = document.createElement('style');
-            style.textContent = `
-                #menu-btn {
-                    cursor: pointer !important;
-                    pointer-events: all !important;
-                    z-index: 1000 !important;
-                    position: relative !important;
-                }
-                
-                #menu-panel {
-                    z-index: 999 !important;
-                    pointer-events: none;
-                    opacity: 0;
-                    transition: all 0.3s ease;
-                }
-                
-                #menu-panel.active {
-                    pointer-events: all;
-                    opacity: 1;
-                }
-                
-                .game-ui {
-                    z-index: 1000 !important;
-                }
-            `;
-            document.head.appendChild(style);
-            console.log("菜单CSS修复已应用");
-        }
-        
-        // 重新绑定菜单按钮事件
-        function rebindMenuButton() {
-            console.log("重新绑定菜单按钮事件...");
-            
-            // 确保菜单面板初始状态
-            if (menuPanel) {
-                menuPanel.classList.remove('active');
-                isMenuOpen = false;
-            }
-            
-            // 移除现有的事件监听器
-            if (menuBtn) {
-                const newMenuBtn = menuBtn.cloneNode(true);
-                menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
-                const newMenuBtnRef = document.getElementById('menu-btn');
-                
-                // 重新绑定事件
-                newMenuBtnRef.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log("菜单按钮被点击");
-                    
-                    isMenuOpen = !isMenuOpen;
-                    if (isMenuOpen) {
-                        menuPanel.classList.add('active');
-                        console.log("菜单打开");
-                    } else {
-                        menuPanel.classList.remove('active');
-                        console.log("菜单关闭");
-                    }
-                });
-                
-                // 添加触摸支持
-                newMenuBtnRef.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    this.click();
-                });
-                
-                console.log("菜单按钮重新绑定成功");
-            } else {
-                console.error("菜单按钮未找到");
-            }
-        }
-        
-        // 添加紧急修复按钮
-        function addEmergencyFixButton() {
-            const emergencyBtn = document.createElement('button');
-            emergencyBtn.textContent = '修复菜单';
-            emergencyBtn.style.position = 'fixed';
-            emergencyBtn.style.top = '300px';
-            emergencyBtn.style.right = '10px';
-            emergencyBtn.style.zIndex = '10000';
-            emergencyBtn.style.background = '#ff6b6b';
-            emergencyBtn.style.color = 'white';
-            emergencyBtn.style.padding = '10px 15px';
-            emergencyBtn.style.border = 'none';
-            emergencyBtn.style.borderRadius = '5px';
-            emergencyBtn.style.cursor = 'pointer';
-            emergencyBtn.style.fontWeight = 'bold';
-            
-            emergencyBtn.addEventListener('click', function() {
-                rebindMenuButton();
-                showNotification('菜单按钮已修复');
-            });
-            
-            document.body.appendChild(emergencyBtn);
-            console.log("紧急修复按钮已添加");
-        }
-        
-        // ==== 修复结束 ====
-        
         // 页面事件监听
-        backBtn.addEventListener('click', function() {
-            window.location.href = 'index.html';
-        });
+        if (backBtn) {
+            backBtn.addEventListener('click', function() {
+                window.location.href = 'index.html';
+            });
+        }
         
-        addModelBtn.addEventListener('click', function() {
-            importModal.classList.add('active');
-            selectedFile = null;
-            modelFileInfo.classList.remove('show');
-        });
+        if (addModelBtn) {
+            addModelBtn.addEventListener('click', function() {
+                importModal.classList.add('active');
+                selectedFile = null;
+                if (modelFileInfo) modelFileInfo.classList.remove('show');
+            });
+        }
         
-        generateModelBtn.addEventListener('click', function() {
-            generateModal.classList.add('active');
-        });
+        if (generateModelBtn) {
+            generateModelBtn.addEventListener('click', function() {
+                generateModal.classList.add('active');
+            });
+        }
         
-        deleteModelBtn.addEventListener('click', function() {
-            updateModelsList();
-            modelsListModal.classList.add('active');
-        });
+        if (deleteModelBtn) {
+            deleteModelBtn.addEventListener('click', function() {
+                updateModelsList();
+                modelsListModal.classList.add('active');
+            });
+        }
         
-        // 注意：这里移除了原来的菜单按钮事件绑定，改用修复后的版本
-        // menuBtn.addEventListener('click', function() {
-        //     isMenuOpen = !isMenuOpen;
-        //     if (isMenuOpen) {
-        //         menuPanel.classList.add('active');
-        //     } else {
-        //         menuPanel.classList.remove('active');
-        //     }
-        // });
+        if (menuBtn) {
+            menuBtn.addEventListener('click', function() {
+                isMenuOpen = !isMenuOpen;
+                if (isMenuOpen) {
+                    menuPanel.classList.add('active');
+                } else {
+                    menuPanel.classList.remove('active');
+                }
+            });
+        }
         
-        toggleLightsBtn.addEventListener('click', toggleLights);
+        if (toggleLightsBtn) {
+            toggleLightsBtn.addEventListener('click', toggleLights);
+        }
         
-        exportSceneBtn.addEventListener('click', function() {
-            saveScene();
-        });
+        if (toggleMoveModeBtn) {
+            toggleMoveModeBtn.addEventListener('click', toggleMoveMode);
+        }
         
-        soundToggleBtn.addEventListener('click', toggleSound);
+        if (soundToggleBtn) {
+            soundToggleBtn.addEventListener('click', toggleSound);
+        }
         
-        screenshotBtn.addEventListener('click', takeScreenshot);
+        if (screenshotBtn) {
+            screenshotBtn.addEventListener('click', takeScreenshot);
+        }
         
-        saveSceneBtn.addEventListener('click', function() {
-            saveSceneModal.classList.add('active');
-        });
+        if (saveSceneBtn) {
+            saveSceneBtn.addEventListener('click', function() {
+                saveSceneModal.classList.add('active');
+            });
+        }
         
-        exitBtn.addEventListener('click', exitGame);
+        if (exitBtn) {
+            exitBtn.addEventListener('click', exitGame);
+        }
         
         // 模态窗口控制
-        closeImportModal.addEventListener('click', function() {
-            importModal.classList.remove('active');
-        });
+        if (closeImportModal) {
+            closeImportModal.addEventListener('click', function() {
+                importModal.classList.remove('active');
+            });
+        }
         
-        cancelImportBtn.addEventListener('click', function() {
-            importModal.classList.remove('active');
-        });
+        if (cancelImportBtn) {
+            cancelImportBtn.addEventListener('click', function() {
+                importModal.classList.remove('active');
+            });
+        }
         
-        confirmImportBtn.addEventListener('click', function() {
-            if (!selectedFile) {
-                showNotification('请先选择一个3D模型文件', 3000);
-                return;
-            }
-            importModal.classList.remove('active');
-            loadModelFile(selectedFile);
-        });
+        if (confirmImportBtn) {
+            confirmImportBtn.addEventListener('click', function() {
+                if (!selectedFile) {
+                    showNotification('请先选择一个3D模型文件', 3000);
+                    return;
+                }
+                importModal.classList.remove('active');
+                loadModelFile(selectedFile);
+            });
+        }
         
-        closeGenerateModal.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-        });
+        if (closeGenerateModal) {
+            closeGenerateModal.addEventListener('click', function() {
+                generateModal.classList.remove('active');
+            });
+        }
         
-        cancelGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-        });
+        if (cancelGenerateBtn) {
+            cancelGenerateBtn.addEventListener('click', function() {
+                generateModal.classList.remove('active');
+            });
+        }
         
-        confirmGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-            showNotification('生成模型功能开发中');
-        });
+        if (confirmGenerateBtn) {
+            confirmGenerateBtn.addEventListener('click', function() {
+                generateModal.classList.remove('active');
+                showNotification('生成模型功能开发中');
+            });
+        }
         
-        closeModelsListModal.addEventListener('click', function() {
-            modelsListModal.classList.remove('active');
-        });
+        if (closeModelsListModal) {
+            closeModelsListModal.addEventListener('click', function() {
+                modelsListModal.classList.remove('active');
+            });
+        }
         
-        closeModelsListBtn.addEventListener('click', function() {
-            modelsListModal.classList.remove('active');
-        });
+        if (closeModelsListBtn) {
+            closeModelsListBtn.addEventListener('click', function() {
+                modelsListModal.classList.remove('active');
+            });
+        }
         
-        closeConfirmDeleteModal.addEventListener('click', function() {
-            confirmDeleteModal.classList.remove('active');
-        });
+        if (closeSelectModelModal) {
+            closeSelectModelModal.addEventListener('click', function() {
+                selectModelModal.classList.remove('active');
+                // 如果当前是模型移动模式，切换回视角移动模式
+                if (currentMoveMode === 'model') {
+                    switchToViewMode();
+                }
+            });
+        }
         
-        cancelConfirmDeleteBtn.addEventListener('click', function() {
-            confirmDeleteModal.classList.remove('active');
-        });
+        if (closeSelectModelsBtn) {
+            closeSelectModelsBtn.addEventListener('click', function() {
+                selectModelModal.classList.remove('active');
+                // 如果当前是模型移动模式，切换回视角移动模式
+                if (currentMoveMode === 'model') {
+                    switchToViewMode();
+                }
+            });
+        }
         
-        confirmModelDeleteBtn.addEventListener('click', deleteModel);
+        if (confirmSelectModelBtn) {
+            confirmSelectModelBtn.addEventListener('click', function() {
+                if (selectedModelIndex !== -1) {
+                    switchToModelMode(selectedModelIndex);
+                    // 不关闭弹窗，让用户可以继续选择其他模型
+                }
+            });
+        }
         
-        closeSuccessModal.addEventListener('click', function() {
-            successModal.classList.remove('active');
-        });
+        if (closeConfirmDeleteModal) {
+            closeConfirmDeleteModal.addEventListener('click', function() {
+                confirmDeleteModal.classList.remove('active');
+            });
+        }
         
-        closeSuccessBtn.addEventListener('click', function() {
-            successModal.classList.remove('active');
-        });
+        if (cancelConfirmDeleteBtn) {
+            cancelConfirmDeleteBtn.addEventListener('click', function() {
+                confirmDeleteModal.classList.remove('active');
+            });
+        }
         
-        closeSaveSceneModal.addEventListener('click', function() {
-            saveSceneModal.classList.remove('active');
-        });
+        if (confirmModelDeleteBtn) {
+            confirmModelDeleteBtn.addEventListener('click', deleteModel);
+        }
         
-        cancelSaveSceneBtn.addEventListener('click', function() {
-            saveSceneModal.classList.remove('active');
-        });
+        if (closeSuccessModal) {
+            closeSuccessModal.addEventListener('click', function() {
+                successModal.classList.remove('active');
+            });
+        }
         
-        confirmSaveSceneBtn.addEventListener('click', function() {
-            const saveName = saveSceneName.value.trim();
-            if (!saveName) {
-                showNotification('请为场景命名', 3000);
-                return;
-            }
-            saveSceneModal.classList.remove('active');
-            saveScene();
-        });
+        if (closeSuccessBtn) {
+            closeSuccessBtn.addEventListener('click', function() {
+                successModal.classList.remove('active');
+            });
+        }
+        
+        if (closeSaveSceneModal) {
+            closeSaveSceneModal.addEventListener('click', function() {
+                saveSceneModal.classList.remove('active');
+            });
+        }
+        
+        if (cancelSaveSceneBtn) {
+            cancelSaveSceneBtn.addEventListener('click', function() {
+                saveSceneModal.classList.remove('active');
+            });
+        }
+        
+        if (confirmSaveSceneBtn) {
+            confirmSaveSceneBtn.addEventListener('click', function() {
+                const saveName = saveSceneName.value.trim();
+                if (!saveName) {
+                    showNotification('请为场景命名', 3000);
+                    return;
+                }
+                saveSceneModal.classList.remove('active');
+                saveScene();
+            });
+        }
         
         // 模型上传区域点击事件
-        modelUploadArea.addEventListener('click', function() {
-            modelFileInput.click();
-        });
+        if (modelUploadArea) {
+            modelUploadArea.addEventListener('click', function() {
+                if (modelFileInput) modelFileInput.click();
+            });
+        }
         
         // 图片上传区域点击事件
-        imageUploadArea.addEventListener('click', function() {
-            imageFileInput.click();
-        });
+        if (imageUploadArea) {
+            imageUploadArea.addEventListener('click', function() {
+                if (imageFileInput) imageFileInput.click();
+            });
+        }
         
         // 文件选择事件
-        modelFileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleModelFileSelect(file);
-            }
-        });
+        if (modelFileInput) {
+            modelFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    handleModelFileSelect(file);
+                }
+            });
+        }
         
         // 封面图片选择事件
-        saveSceneCover.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleCoverImageSelect(file);
-            }
-        });
+        if (saveSceneCover) {
+            saveSceneCover.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    handleCoverImageSelect(file);
+                }
+            });
+        }
         
         // 拖拽上传处理
-        modelUploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            modelUploadArea.style.backgroundColor = '#e8e4ff';
-            modelUploadArea.style.borderColor = '#7b68ee';
-        });
-        
-        modelUploadArea.addEventListener('dragleave', function() {
-            modelUploadArea.style.backgroundColor = '#f9f7ff';
-            modelUploadArea.style.borderColor = '#c5b3ff';
-        });
-        
-        modelUploadArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            modelUploadArea.style.backgroundColor = '#f9f7ff';
-            modelUploadArea.style.borderColor = '#c5b3ff';
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (ext === 'glb' || ext === 'gltf') {
-                    handleModelFileSelect(file);
-                } else {
-                    showNotification('不支持的文件格式，请选择GLB或GLTF文件', 3000);
+        if (modelUploadArea) {
+            modelUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                modelUploadArea.style.backgroundColor = '#e8e4ff';
+                modelUploadArea.style.borderColor = '#7b68ee';
+            });
+            
+            modelUploadArea.addEventListener('dragleave', function() {
+                modelUploadArea.style.backgroundColor = '#f9f7ff';
+                modelUploadArea.style.borderColor = '#c5b3ff';
+            });
+            
+            modelUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                modelUploadArea.style.backgroundColor = '#f9f7ff';
+                modelUploadArea.style.borderColor = '#c5b3ff';
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    if (ext === 'glb' || ext === 'gltf') {
+                        handleModelFileSelect(file);
+                    } else {
+                        showNotification('不支持的文件格式，请选择GLB或GLTF文件', 3000);
+                    }
                 }
-            }
-        });
+            });
+        }
         
         // 点击其他地方关闭菜单
         document.addEventListener('click', function(e) {
-            if (isMenuOpen && !menuPanel.contains(e.target) && e.target !== menuBtn) {
+            if (isMenuOpen && menuPanel && !menuPanel.contains(e.target) && e.target !== menuBtn) {
                 menuPanel.classList.remove('active');
                 isMenuOpen = false;
             }
@@ -2134,48 +1657,36 @@
         
         // 页面加载完成后初始化游戏
         window.addEventListener('DOMContentLoaded', function() {
-            console.log("DOMContentLoaded - 开始初始化");
-            
-            // 修复CSS
-            fixMenuCSS();
-            
-            // 添加紧急修复按钮
-            addEmergencyFixButton();
-            
-            // 加载保存的场景
             loadSavedScenes();
-            
             showLoading('正在初始化3D场景...');
             updateProgress(0);
-            timeEstimate.textContent = '预计时间: 2秒';
+            if (timeEstimate) timeEstimate.textContent = '预计时间: 2秒';
             
             let progress = 0;
             const progressInterval = setInterval(function() {
                 progress += 10;
                 updateProgress(progress);
-                timeEstimate.textContent = `预计时间: ${Math.floor((100 - progress) / 20)}秒`;
+                if (timeEstimate) timeEstimate.textContent = `预计时间: ${Math.floor((100 - progress) / 20)}秒`;
                 
                 if (progress === 20) {
-                    loadingText.textContent = '正在初始化3D引擎...';
+                    if (loadingText) loadingText.textContent = '正在初始化3D引擎...';
                 } else if (progress === 40) {
-                    loadingText.textContent = '正在创建场景...';
+                    if (loadingText) loadingText.textContent = '正在创建场景...';
                 } else if (progress === 60) {
-                    loadingText.textContent = '正在设置光照...';
+                    if (loadingText) loadingText.textContent = '正在设置光照...';
                 } else if (progress === 80) {
-                    loadingText.textContent = '正在添加家具...';
+                    if (loadingText) loadingText.textContent = '正在添加家具...';
                 } else if (progress >= 100) {
                     clearInterval(progressInterval);
                     setTimeout(function() {
                         if (initThreeJS()) {
                             hideLoading();
-                            gameContainer.style.display = 'block';
+                            if (gameContainer) gameContainer.style.display = 'block';
                             showNotification('温馨小屋已加载！使用鼠标拖拽旋转视角，滚轮缩放，键盘WSADUY控制移动');
-                            keyboardControlsDiv.style.display = 'block';
-                            
-                            // 在Three.js初始化后重新绑定菜单按钮
-                            setTimeout(rebindMenuButton, 100);
+                            if (keyboardControlsDiv) keyboardControlsDiv.style.display = 'block';
+                            if (currentAction) currentAction.style.display = 'flex';
                         } else {
-                            loadingText.textContent = '加载失败，请刷新重试';
+                            if (loadingText) loadingText.textContent = '加载失败，请刷新重试';
                             setTimeout(function() {
                                 hideLoading();
                                 alert('游戏加载失败，请刷新页面重试');
@@ -2186,71 +1697,9 @@
             }, 200);
         });
         
-        // 键盘输入处理函数
-        function handleKeyboardInput() {
-            if (!camera) return;
-            
-            const moveVector = new THREE.Vector3(0, 0, 0);
-            
-            if (keyboardControls.w) moveVector.y += moveSpeed;
-            if (keyboardControls.s) moveVector.y -= moveSpeed;
-            if (keyboardControls.a) moveVector.x -= moveSpeed;
-            if (keyboardControls.d) moveVector.x += moveSpeed;
-            if (keyboardControls.u) moveVector.z -= moveSpeed;
-            if (keyboardControls.y) moveVector.z += moveSpeed;
-            
-            if (moveVector.length() === 0) return;
-            
-            camera.position.add(moveVector);
-            if (controls && controls.target) {
-                controls.target.add(moveVector);
-            }
-            if (controls && controls.update) {
-                controls.update();
-            }
-        }
-        
-        // 动画循环
-        function animate() {
-            animationFrameId = requestAnimationFrame(animate);
-            handleKeyboardInput();
-            if (controls && controls.update) {
-                controls.update();
-            }
-            if (scene && camera && renderer) {
-                renderer.render(scene, camera);
-            }
-        }
-        
-        // 切换灯光
-        function toggleLights() {
-            if (lights.length === 0) return;
-            const isVisible = lights[0].visible;
-            lights.forEach(light => {
-                if (light.visible !== undefined) {
-                    light.visible = !isVisible;
-                }
-            });
-            showNotification(isVisible ? '灯光已关闭' : '灯光已开启');
-        }
-        
         // 页面完全加载后的最终初始化
         window.addEventListener('load', function() {
             console.log("页面完全加载，进行最终初始化");
-            
-            // 最终检查
-            setTimeout(function() {
-                console.log("=== 最终检查 ===");
-                console.log("菜单按钮:", menuBtn ? "找到" : "未找到");
-                console.log("菜单面板:", menuPanel ? "找到" : "未找到");
-                console.log("==================");
-                
-                // 如果菜单按钮仍然无效，强制修复
-                if (menuBtn && menuPanel) {
-                    menuBtn.style.border = '2px solid #00ff00';
-                    menuBtn.style.boxShadow = '0 0 10px #00ff00';
-                }
-            }, 2000);
         });
         
         // 显示初始提示
