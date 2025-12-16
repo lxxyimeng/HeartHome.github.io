@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史小屋 - 3D心动小屋</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #ffcfe0 0%, #ff9a9e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+        }
+        
+        .page-subtitle {
+            font-size: 1.2rem;
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn {
+            background-color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ff6b8b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 107, 139, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 139, 0.3);
+        }
+        
+        .history-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .history-item {
+            background-color: #f9f7ff;
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s ease;
+            border: 2px solid #eee;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .history-item:hover {
+            background-color: #f0ecff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(123, 104, 238, 0.15);
+            border-color: #c5b3ff;
+        }
+        
+        .history-item.selected {
+            background-color: #e8e4ff;
+            border-color: #7b68ee;
+            box-shadow: 0 5px 15px rgba(123, 104, 238, 0.2);
+        }
+        
+        .history-preview {
+            width: 100%;
+            height: 120px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .history-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .history-preview i {
+            font-size: 2.5rem;
+            color: #aaa;
+        }
+        
+        .history-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .history-name {
+            font-weight: 700;
+            color: #7b68ee;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .history-map-name {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .history-map-name i {
+            color: #7b68ee;
+            font-size: 0.8rem;
+        }
+        
+        .history-time {
+            font-size: 0.8rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .history-time i {
+            font-size: 0.8rem;
+        }
+        
+        .history-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-shrink: 0;
+        }
+        
+        .history-action-btn {
+            background-color: #7b68ee;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .history-action-btn:hover {
+            background-color: #6a58d3;
+            transform: scale(1.05);
+        }
+        
+        .history-action-btn.delete {
+            background-color: #ff6b8b;
+        }
+        
+        .history-action-btn.delete:hover {
+            background-color: #ff4d6d;
+        }
+        
+        .history-action-btn.load {
+            background-color: #4CAF50;
+        }
+        
+        .history-action-btn.load:hover {
+            background-color: #45a049;
+        }
+        
+        .no-history-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+            font-size: 1.1rem;
+        }
+        
+        .no-history-message i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .history-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-title {
+                font-size: 2.5rem;
+            }
+            
+            .history-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="back-btn" id="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            返回主页
+        </button>
+        <h1 class="page-title">历史小屋</h1>
+        <p class="page-subtitle">管理您保存的3D场景</p>
+    </div>
+    
+    <div class="history-container">
+        <div class="history-grid" id="history-grid">
+            <!-- 历史记录将动态添加到这里 -->
+        </div>
+        
+        <div class="no-history-message" id="no-history-message">
+            <i class="fas fa-history"></i>
+            <p>还没有保存过任何场景</p>
+        </div>
+    </div>
+
+    <script>
+        // 从本地存储加载保存的场景
+        function loadSavedScenes() {
+            try {
+                const savedData = localStorage.getItem('3dHeartHouseSavedScenes');
+                return savedData ? JSON.parse(savedData) : [];
+            } catch (error) {
+                console.error("加载保存的场景失败:", error);
+                return [];
+            }
+        }
+        
+        // 更新历史小屋列表
+        function updateHistoryList() {
+            const historyGrid = document.getElementById('history-grid');
+            const noHistoryMessage = document.getElementById('no-history-message');
+            const savedScenes = loadSavedScenes();
+            
+            // 清空容器
+            historyGrid.innerHTML = '';
+            
+            if (savedScenes.length === 0) {
+                noHistoryMessage.style.display = 'block';
+                return;
+            }
+            
+            noHistoryMessage.style.display = 'none';
+            
+            // 按时间倒序排列
+            const sortedScenes = [...savedScenes].sort((a, b) => new Date(b.time) - new Date(a.time));
+            
+            // 添加每个保存的场景
+            sortedScenes.forEach((scene, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.dataset.index = index;
+                
+                const time = new Date(scene.time);
+                const timeStr = `${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')} ${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                
+                // 使用保存的封面图片或默认截图
+                const previewImage = scene.coverImage || scene.screenshot;
+                
+                historyItem.innerHTML = `
+                    <div class="history-preview">
+                        ${previewImage ? `` : '<i class="fas fa-image"></i>'}
+                    </div>
+                    <div class="history-info">
+                        <div class="history-name">${scene.saveName}</div>
+                        <div class="history-map-name">
+                            <i class="fas fa-map"></i>
+                            ${scene.mapName}
+                        </div>
+                        <div class="history-time">
+                            <i class="far fa-clock"></i>
+                            ${timeStr}
+                        </div>
+                    </div>
+                    <div class="history-actions">
+                        <button class="history-action-btn load" data-index="${index}">
+                            <i class="fas fa-play"></i> 加载
+                        </button>
+                        <button class="history-action-btn delete" data-index="${index}">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                `;
+                
+                historyGrid.appendChild(historyItem);
+            });
+            
+            // 添加事件监听
+            document.querySelectorAll('.history-action-btn.load').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const index = parseInt(this.dataset.index);
+                    loadScene(index);
+                });
+            });
+            
+            document.querySelectorAll('.history-action-btn.delete').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const index = parseInt(this.dataset.index);
+                    deleteScene(index);
+                });
+            });
+        }
+        
+        // 加载场景
+        function loadScene(index) {
+            const savedScenes = loadSavedScenes();
+            if (index < 0 || index >= savedScenes.length) return;
+            
+            const sceneInfo = savedScenes[index];
+            
+            // 将场景信息存储到sessionStorage，以便game.html页面读取
+            sessionStorage.setItem('sceneToLoad', JSON.stringify(sceneInfo));
+            
+            // 跳转到游戏页面
+            window.location.href = 'game.html';
+        }
+        
+        // 删除场景
+        function deleteScene(index) {
+            const savedScenes = loadSavedScenes();
+            if (index < 0 || index >= savedScenes.length) return;
+            
+            const sceneName = savedScenes[index].saveName;
+            if (confirm(`确定要删除场景"${sceneName}"吗？`)) {
+                savedScenes.splice(index, 1);
+                localStorage.setItem('3dHeartHouseSavedScenes', JSON.stringify(savedScenes));
+                updateHistoryList();
+                alert(`场景"${sceneName}"已删除`);
+            }
+        }
+        
+        // 返回主页
+        document.getElementById('back-btn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+        
+        // 页面加载时更新历史列表
+        document.addEventListener('DOMContentLoaded', function() {
+            updateHistoryList();
+        });
+    </script>
+</body>
+</html>

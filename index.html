@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D心动小屋 - 游戏</title>
+    <title>3D心动小屋 - 打造专属于你的温馨3D小屋</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -16,2528 +16,274 @@
         body {
             overflow: hidden;
             color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
         }
         
-        /* 加载屏幕 */
-        #loading-screen {
+        /* 视频背景 */
+        #video-background {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            color: white;
-        }
-        
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #7b68ee;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .loading-text {
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-        }
-        
-        .progress-container {
-            width: 300px;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #7b68ee, #ff6b8b);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-        
-        .time-estimate {
-            font-size: 0.9rem;
-            color: #aaa;
-            margin-top: 10px;
-        }
-        
-        /* 游戏容器 */
-        #game-container {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-        
-        #game-canvas {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        
-        /* 游戏UI控制面板 */
-        .game-ui {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 10;
-        }
-        
-        .game-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #7b68ee;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .game-btn:hover {
-            background-color: #7b68ee;
-            color: white;
-            transform: scale(1.1);
-        }
-        
-        /* 模型控制按钮 */
-        .model-controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-            z-index: 10;
-        }
-        
-        .control-btn {
-            background-color: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 25px;
-            color: #7b68ee;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .control-btn:hover {
-            background-color: #7b68ee;
-            color: white;
-            transform: translateY(-2px);
-        }
-        
-        /* 提示信息 */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: white;
-            border-radius: 10px;
-            padding: 15px 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 1000;
-            transform: translateX(120%);
-            transition: transform 0.4s ease;
-        }
-        
-        .notification.show {
-            transform: translateX(0);
-        }
-        
-        .notification i {
-            color: #7b68ee;
-            font-size: 1.2rem;
-        }
-        
-        /* 模态窗口 */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        
-        .modal.active {
-            opacity: 1;
-            pointer-events: all;
-            display: flex;
-        }
-        
-        .modal-content {
-            background-color: white;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
-            padding: 30px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            transform: translateY(20px);
-            transition: transform 0.4s ease;
-        }
-        
-        .modal.active .modal-content {
-            transform: translateY(0);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .modal-title {
-            font-size: 1.5rem;
-            color: #7b68ee;
-            font-weight: 700;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: #999;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        
-        .close-modal:hover {
-            color: #ff4d6d;
-        }
-        
-        .upload-area {
-            border: 3px dashed #c5b3ff;
-            border-radius: 15px;
-            padding: 40px 20px;
-            text-align: center;
-            background-color: #f9f7ff;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 20px;
-        }
-        
-        .upload-area:hover {
-            background-color: #f0ecff;
-            border-color: #7b68ee;
-        }
-        
-        .upload-area i {
-            font-size: 3rem;
-            color: #7b68ee;
-            margin-bottom: 15px;
-        }
-        
-        .upload-text {
-            font-size: 1.1rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        
-        .upload-hint {
-            font-size: 0.9rem;
-            color: #999;
-        }
-        
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .action-btn {
-            padding: 12px 25px;
-            border-radius: 50px;
-            border: none;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .primary-btn {
-            background-color: #7b68ee;
-            color: white;
-        }
-        
-        .primary-btn:hover {
-            background-color: #6a58d3;
-        }
-        
-        .secondary-btn {
-            background-color: #f0f0f0;
-            color: #666;
-        }
-        
-        .secondary-btn:hover {
-            background-color: #e0e0e0;
-        }
-        
-        /* 控制说明 */
-        .controls-info {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            z-index: 5;
-        }
-        
-        .controls-info p {
-            margin: 5px 0;
-        }
-        
-        /* 键盘控制提示样式 */
-        .keyboard-controls {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            z-index: 5;
-        }
-        
-        .keyboard-controls h3 {
-            margin-bottom: 10px;
-            color: #7b68ee;
-            font-size: 1rem;
-        }
-        
-        .key-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-        
-        .key {
-            display: inline-block;
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            min-width: 30px;
-            text-align: center;
-        }
-        
-        .key-description {
-            margin-left: 10px;
-        }
-        
-        /* 文件输入 */
-        .file-input {
-            display: none;
-        }
-        
-        /* 菜单面板 */
-        .menu-panel {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            background-color: white;
-            border-radius: 15px;
-            padding: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-            z-index: 10;
-            transform: translateY(-20px);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
-        
-        .menu-panel.active {
-            transform: translateY(0);
-            opacity: 1;
-            pointer-events: all;
-        }
-        
-        .menu-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .menu-item:hover {
-            background-color: #f5f5ff;
-        }
-        
-        .menu-item i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-            color: #7b68ee;
-        }
-        
-        .menu-divider {
-            height: 1px;
-            background-color: #eee;
-            margin: 10px 0;
-        }
-        
-        /* 导入模型模态窗口样式 */
-        #import-modal .upload-area {
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        #import-modal .file-info {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f0f8ff;
-            border-radius: 8px;
-            width: 100%;
-            text-align: left;
-            display: none;
-        }
-        
-        #import-modal .file-info.show {
-            display: block;
-        }
-        
-        #import-modal .file-name {
-            font-weight: 600;
-            color: #7b68ee;
-            margin-bottom: 5px;
-        }
-        
-        #import-modal .file-size {
-            font-size: 0.9rem;
-            color: #666;
-        }
-        
-        /* 模型列表模态窗口样式 */
-        #models-list-modal .models-list-container {
-            max-height: 400px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            padding-right: 10px;
-        }
-        
-        .models-list-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .models-list-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        
-        .models-list-container::-webkit-scrollbar-thumb {
-            background: #c5b3ff;
-            border-radius: 3px;
-        }
-        
-        .models-list-container::-webkit-scrollbar-thumb:hover {
-            background: #7b68ee;
-        }
-        
-        .model-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px;
-            background-color: #f9f7ff;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            transition: all 0.3s ease;
-            border: 1px solid #eee;
-        }
-        
-        .model-item:hover {
-            background-color: #f0ecff;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 10px rgba(123, 104, 238, 0.1);
-        }
-        
-        .model-info {
-            flex: 1;
-        }
-        
-        .model-name {
-            font-weight: 600;
-            color: #7b68ee;
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
-        
-        .model-time {
-            font-size: 0.85rem;
-            color: #888;
-        }
-        
-        .delete-model-btn {
-            background-color: #ff6b8b;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-        
-        .delete-model-btn:hover {
-            background-color: #ff4d6d;
-            transform: scale(1.05);
-        }
-        
-        .no-models-message {
-            text-align: center;
-            padding: 40px 20px;
-            color: #888;
-            font-size: 1.1rem;
-        }
-        
-        .no-models-message i {
-            font-size: 3rem;
-            color: #ddd;
-            margin-bottom: 15px;
-            display: block;
-        }
-        
-        /* 确认删除模态窗口样式 */
-        #confirm-delete-modal .confirm-text {
-            text-align: center;
-            padding: 20px 0;
-            font-size: 1.1rem;
-            color: #666;
-        }
-        
-        .model-name-to-delete {
-            color: #7b68ee;
-            font-weight: 600;
-        }
-        
-        /* 成功模态窗口 */
-        #success-modal .modal-content {
-            text-align: center;
-        }
-        
-        #success-modal p {
-            margin: 20px 0;
-            font-size: 1.1rem;
-            color: #666;
-        }
-        
-        /* 保存场景模态窗口 */
-        #save-scene-modal .save-form {
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #7b68ee;
-        }
-        
-        .form-input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border 0.3s;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: #7b68ee;
-        }
-        
-        .preview-section {
-            margin-top: 20px;
-        }
-        
-        .preview-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-        }
-        
-        .preview-image {
-            width: 200px;
-            height: 150px;
-            border-radius: 8px;
-            overflow: hidden;
-            background-color: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .preview-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            z-index: -1;
         }
         
-        .default-preview {
+        /* 视频背景覆盖层 */
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: -1;
+        }
+        
+        .game-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+        }
+        
+        .game-subtitle {
+            font-size: 1.4rem;
+            color: white;
+            margin-bottom: 3.5rem;
+            display: flex;
+            align-items: center;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .heart-icon {
+            color: #ff4d6d;
+            margin-left: 10px;
+            font-size: 1.8rem;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .menu-buttons {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #888;
+            gap: 1.2rem;
+            width: 320px;
         }
         
-        .default-preview i {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-        
-        /* 返回按钮 */
-        .back-btn {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background-color: white;
-            border: none;
+        /* 核心修改1：移除菜单按钮的白色背景，改为透明+边框 */
+        .menu-btn {
+            background-color: transparent; /* 移除白色背景 */
+            border: 2px solid white; /* 白色边框替代背景 */
             border-radius: 50px;
-            padding: 12px 25px;
-            font-size: 1rem;
+            padding: 18px 30px;
+            font-size: 1.3rem;
             font-weight: 600;
-            color: #7b68ee;
+            color: white; /* 文字改为白色，适配透明背景 */
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 8px;
-            z-index: 10;
         }
         
-        .back-btn:hover {
-            background-color: #7b68ee;
+        .menu-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
             color: white;
-            transform: translateY(-2px);
+            background-color: rgba(255, 255, 255, 0.1); /* 悬浮时轻微透明背景 */
+            border-color: #ff4d6d; /* 悬浮时边框变色 */
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* 核心修改2：移除控制按钮的半透明白色背景 */
+        .control-btn {
+            background-color: transparent; /* 移除半透明白色背景 */
+            border: 1px solid white; /* 白色边框替代背景 */
+            border-radius: 50px;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .control-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1); /* 悬浮时轻微透明背景 */
+            border-color: #ff4d6d; /* 悬浮时边框变色 */
+        }
+        
+        .content-container {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
         }
         
         @media (max-width: 768px) {
-            .controls-info {
-                font-size: 0.8rem;
-                padding: 10px;
-                bottom: 10px;
-                left: 10px;
+            .game-title {
+                font-size: 3.2rem;
             }
             
-            .keyboard-controls {
-                left: 10px;
-                right: 10px;
-                top: auto;
-                bottom: 100px;
-                width: calc(100% - 20px);
-            }
-            
-            .menu-panel {
-                width: 200px;
-            }
-            
-            .model-item {
+            .game-subtitle {
+                font-size: 1.1rem;
+                text-align: center;
                 flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
             }
             
-            .delete-model-btn {
-                align-self: flex-end;
+            .menu-buttons {
+                width: 280px;
             }
             
-            .modal-content {
-                width: 95%;
-                padding: 20px;
-            }
-            
-            .game-btn {
-                width: 45px;
-                height: 45px;
-            }
-            
-            .control-btn {
-                padding: 10px 20px;
-                font-size: 0.9rem;
-            }
-            
-            .model-controls {
-                bottom: 10px;
-                flex-wrap: wrap;
-                justify-content: center;
+            .content-container {
+                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- 返回按钮 -->
-    <button class="back-btn" id="back-btn">
-        <i class="fas fa-arrow-left"></i>
-        返回主页
-    </button>
+    <!-- 核心修改3：移除 muted 属性，让视频默认非静音 -->
+    <video id="video-background" autoplay loop>
+        <source src="background.mp4" type="video/mp4">
+        您的浏览器不支持视频标签。
+    </video>
     
-    <!-- 加载屏幕 -->
-    <div id="loading-screen">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loading-text">正在初始化3D引擎...</div>
-        <div class="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
-        <div class="time-estimate" id="time-estimate">预计时间: 2秒</div>
-    </div>
+    <!-- 视频背景覆盖层 -->
+    <div class="video-overlay"></div>
     
-    <!-- 游戏容器 -->
-    <div id="game-container">
-        <canvas id="game-canvas"></canvas>
-        
-        <!-- 游戏控制按钮 -->
-        <div class="game-ui">
-            <button class="game-btn" id="add-model-btn" title="加入模型">
-                <i class="fas fa-cube"></i>
-            </button>
-            <button class="game-btn" id="generate-model-btn" title="生成模型">
-                <i class="fas fa-magic"></i>
-            </button>
-            <button class="game-btn" id="delete-model-btn" title="删除模型">
-                <i class="fas fa-trash"></i>
-            </button>
-            <button class="game-btn" id="menu-btn" title="菜单">
-                <i class="fas fa-bars"></i>
-            </button>
+    <div class="content-container">
+        <h1 class="game-title">3D心动小屋</h1>
+        <div class="game-subtitle">
+            打造专属于你的温馨3D小屋
+            <i class="fas fa-heart heart-icon"></i>
         </div>
         
-        <!-- 菜单面板 -->
-        <div class="menu-panel" id="menu-panel">
-            <div class="menu-item" id="sound-toggle-btn">
-                <i class="fas fa-volume-up"></i>
-                <span>声音: 开</span>
-            </div>
-            <div class="menu-item" id="screenshot-btn">
-                <i class="fas fa-camera"></i>
-                <span>截图</span>
-            </div>
-            <div class="menu-divider"></div>
-            <div class="menu-item" id="save-scene-btn">
-                <i class="fas fa-save"></i>
-                <span>保存场景</span>
-            </div>
-            <div class="menu-divider"></div>
-            <div class="menu-item" id="exit-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>退出游戏</span>
-            </div>
-        </div>
-        
-        <!-- 键盘控制提示 -->
-        <div class="keyboard-controls" id="keyboard-controls">
-            <h3>键盘控制</h3>
-            <div class="key-row">
-                <div><span class="key">W</span><span class="key-description">向上移动</span></div>
-                <div><span class="key">S</span><span class="key-description">向下移动</span></div>
-            </div>
-            <div class="key-row">
-                <div><span class="key">A</span><span class="key-description">向左移动</span></div>
-                <div><span class="key">D</span><span class="key-description">向右移动</span></div>
-            </div>
-            <div class="key-row">
-                <div><span class="key">U</span><span class="key-description">向前移动</span></div>
-                <div><span class="key">Y</span><span class="key-description">向后移动</span></div>
-            </div>
-        </div>
-        
-        <!-- 控制说明 -->
-        <div class="controls-info">
-            <p>鼠标左键拖动: 旋转视角</p>
-            <p>鼠标右键拖动: 平移视角</p>
-            <p>鼠标滚轮: 缩放视角</p>
-        </div>
-        
-        <!-- 模型控制按钮 -->
-        <div class="model-controls">
-            <button class="control-btn" id="toggle-lights-btn">
-                <i class="fas fa-lightbulb"></i>
-                切换灯光
-            </button>
-            <button class="control-btn" id="export-scene-btn">
-                <i class="fas fa-save"></i>
-                保存场景
-            </button>
+        <div class="menu-buttons">
+            <button class="menu-btn" id="start-game-btn">开始游戏</button>
+            <button class="menu-btn" id="history-btn">历史小屋</button>
+            <button class="menu-btn" id="map-select-btn">地图选择</button>
         </div>
     </div>
     
-    <!-- 导入模型模态窗口 -->
-    <div class="modal" id="import-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">导入3D模型</h3>
-                <button class="close-modal" id="close-import-modal">&times;</button>
-            </div>
-            
-            <div class="upload-area" id="model-upload-area">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p class="upload-text">点击或拖拽3D模型文件至此处上传</p>
-                <p class="upload-hint">支持GLB、GLTF格式文件</p>
-                <div class="file-info" id="model-file-info">
-                    <div class="file-name" id="model-file-name"></div>
-                    <div class="file-size" id="model-file-size"></div>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="cancel-import-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-import-btn">导入模型</button>
-            </div>
-        </div>
+    <!-- 视频控制按钮 -->
+    <div class="controls">
+        <button class="control-btn" id="video-mute-btn">
+            <i class="fas fa-volume-up"></i>
+            静音
+        </button>
+        <button class="control-btn" id="video-pause-btn">
+            <i class="fas fa-pause"></i>
+            暂停
+        </button>
     </div>
-    
-    <!-- 生成模型模态窗口 -->
-    <div class="modal" id="generate-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">生成3D模型</h3>
-                <button class="close-modal" id="close-generate-modal">&times;</button>
-            </div>
-            
-            <div class="upload-area" id="image-upload-area">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p class="upload-text">点击或拖拽图片至此处上传</p>
-                <p class="upload-hint">支持JPG、PNG、WEBP格式，建议图片分辨率不低于1024x1024</p>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="cancel-generate-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-generate-btn">开始生成3D模型</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 模型列表模态窗口 -->
-    <div class="modal" id="models-list-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">删除模型</h3>
-                <button class="close-modal" id="close-models-list-modal">&times;</button>
-            </div>
-            
-            <div class="models-list-container" id="models-list-container">
-                <!-- 模型列表将动态添加到这里 -->
-                <div class="no-models-message" id="no-models-message">
-                    <i class="fas fa-cube"></i>
-                    <p>还没有导入任何模型</p>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="close-models-list-btn">关闭</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 确认删除模态窗口 -->
-    <div class="modal" id="confirm-delete-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">确认删除</h3>
-                <button class="close-modal" id="close-confirm-delete-modal">&times;</button>
-            </div>
-            
-            <div class="confirm-text">
-                <p>您确定要删除模型 <span class="model-name-to-delete" id="model-name-to-delete">未知模型</span> 吗？此操作不可撤销。</p>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="cancel-confirm-delete-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-model-delete-btn">确认删除</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 成功模态窗口 -->
-    <div class="modal" id="success-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">操作成功</h3>
-                <button class="close-modal" id="close-success-modal">&times;</button>
-            </div>
-            
-            <p id="success-message">模型已成功添加！</p>
-            
-            <div class="modal-actions">
-                <button class="action-btn primary-btn" id="close-success-btn">确定</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 保存场景模态窗口 -->
-    <div class="modal" id="save-scene-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">保存场景</h3>
-                <button class="close-modal" id="close-save-scene-modal">&times;</button>
-            </div>
-            
-            <div class="save-form">
-                <div class="form-group">
-                    <label class="form-label" for="save-scene-name">场景名称</label>
-                    <input type="text" class="form-input" id="save-scene-name" placeholder="请输入场景名称" value="场景保存">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="save-scene-cover">封面图片 (可选)</label>
-                    <input type="file" class="form-input" id="save-scene-cover" accept=".jpg,.jpeg,.png,.webp">
-                </div>
-                
-                <div class="preview-section">
-                    <label class="form-label">封面预览</label>
-                    <div class="preview-container">
-                        <div class="preview-image" id="cover-preview">
-                            <div class="default-preview">
-                                <i class="fas fa-image"></i>
-                                <span>默认封面</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="action-btn secondary-btn" id="cancel-save-scene-btn">取消</button>
-                <button class="action-btn primary-btn" id="confirm-save-scene-btn">保存场景</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 提示信息 -->
-    <div class="notification" id="notification">
-        <i class="fas fa-info-circle"></i>
-        <span id="notification-text">欢迎来到3D心动小屋！</span>
-    </div>
-    
-    <!-- 隐藏的文件输入 -->
-    <input type="file" id="model-file-input" accept=".glb,.gltf" class="file-input">
-    <input type="file" id="image-file-input" accept=".jpg,.jpeg,.png,.webp" class="file-input">
 
-    <!-- 引入Three.js库和控制器 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
-    
     <script>
-        console.log("3D心动小屋游戏初始化...");
+        // 获取DOM元素
+        const videoBackground = document.getElementById('video-background');
+        const videoMuteBtn = document.getElementById('video-mute-btn');
+        const videoPauseBtn = document.getElementById('video-pause-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const historyBtn = document.getElementById('history-btn');
+        const mapSelectBtn = document.getElementById('map-select-btn');
         
-        // 游戏状态变量
-        let scene, camera, renderer, controls;
-        let lights = [];
-        let roomObjects = [];
-        let importedModels = [];
-        let isDeleteMode = false;
-        let selectedModel = null;
-        let isRotating = false;
-        let rotationSpeed = 0.01;
-        let startTime = null;
-        let animationFrameId = null;
-        let isSoundOn = true;
-        let isMenuOpen = false;
-        let selectedFile = null;
-        let GLTFLoader = null;
-        let modelToDeleteIndex = -1;
-        let savedScenes = [];
-        let selectedHistoryIndex = -1;
-        let currentMapName = "温馨之家";
-        let coverImageFile = null;
-        let coverImageURL = null;
-        let isHistoryLoading = false;
-        let isGameInitialized = false;
-        let isHistoryModalOpen = false;
-        let keyboardControls = {
-            w: false,
-            s: false,
-            a: false,
-            d: false,
-            u: false,
-            y: false
-        };
-        const moveSpeed = 0.2;
-        const keyboardControlsDiv = document.getElementById('keyboard-controls');
-        
-        // DOM元素获取
-        const backBtn = document.getElementById('back-btn');
-        const gameContainer = document.getElementById('game-container');
-        const gameCanvas = document.getElementById('game-canvas');
-        const loadingScreen = document.getElementById('loading-screen');
-        const loadingText = document.getElementById('loading-text');
-        const progressBar = document.getElementById('progress-bar');
-        const timeEstimate = document.getElementById('time-estimate');
-        const notification = document.getElementById('notification');
-        const notificationText = document.getElementById('notification-text');
-        const addModelBtn = document.getElementById('add-model-btn');
-        const generateModelBtn = document.getElementById('generate-model-btn');
-        const deleteModelBtn = document.getElementById('delete-model-btn');
-        const menuBtn = document.getElementById('menu-btn');
-        const toggleLightsBtn = document.getElementById('toggle-lights-btn');
-        const exportSceneBtn = document.getElementById('export-scene-btn');
-        const menuPanel = document.getElementById('menu-panel');
-        const soundToggleBtn = document.getElementById('sound-toggle-btn');
-        const screenshotBtn = document.getElementById('screenshot-btn');
-        const saveSceneBtn = document.getElementById('save-scene-btn');
-        const exitBtn = document.getElementById('exit-btn');
-        const importModal = document.getElementById('import-modal');
-        const generateModal = document.getElementById('generate-modal');
-        const modelsListModal = document.getElementById('models-list-modal');
-        const confirmDeleteModal = document.getElementById('confirm-delete-modal');
-        const successModal = document.getElementById('success-modal');
-        const saveSceneModal = document.getElementById('save-scene-modal');
-        const closeImportModal = document.getElementById('close-import-modal');
-        const closeGenerateModal = document.getElementById('close-generate-modal');
-        const closeModelsListModal = document.getElementById('close-models-list-modal');
-        const closeConfirmDeleteModal = document.getElementById('close-confirm-delete-modal');
-        const closeSuccessModal = document.getElementById('close-success-modal');
-        const closeSaveSceneModal = document.getElementById('close-save-scene-modal');
-        const cancelImportBtn = document.getElementById('cancel-import-btn');
-        const confirmImportBtn = document.getElementById('confirm-import-btn');
-        const cancelGenerateBtn = document.getElementById('cancel-generate-btn');
-        const confirmGenerateBtn = document.getElementById('confirm-generate-btn');
-        const closeModelsListBtn = document.getElementById('close-models-list-btn');
-        const cancelConfirmDeleteBtn = document.getElementById('cancel-confirm-delete-btn');
-        const confirmModelDeleteBtn = document.getElementById('confirm-model-delete-btn');
-        const closeSuccessBtn = document.getElementById('close-success-btn');
-        const cancelSaveSceneBtn = document.getElementById('cancel-save-scene-btn');
-        const confirmSaveSceneBtn = document.getElementById('confirm-save-scene-btn');
-        const modelUploadArea = document.getElementById('model-upload-area');
-        const imageUploadArea = document.getElementById('image-upload-area');
-        const modelFileInfo = document.getElementById('model-file-info');
-        const modelFileName = document.getElementById('model-file-name');
-        const modelFileSize = document.getElementById('model-file-size');
-        const successMessage = document.getElementById('success-message');
-        const modelFileInput = document.getElementById('model-file-input');
-        const imageFileInput = document.getElementById('image-file-input');
-        const saveSceneName = document.getElementById('save-scene-name');
-        const saveSceneCover = document.getElementById('save-scene-cover');
-        const coverPreview = document.getElementById('cover-preview');
-        const modelsListContainer = document.getElementById('models-list-container');
-        const noModelsMessage = document.getElementById('no-models-message');
-        const modelNameToDelete = document.getElementById('model-name-to-delete');
-        
-        // 显示提示信息
-        function showNotification(message, duration = 3000) {
-            notificationText.textContent = message;
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, duration);
-        }
-        
-        // 更新加载进度
-        function updateProgress(percentage) {
-            progressBar.style.width = percentage + '%';
-        }
-        
-        // 显示/隐藏加载界面
-        function showLoading(text) {
-            loadingText.textContent = text;
-            loadingScreen.style.display = 'flex';
-        }
-        
-        function hideLoading() {
-            loadingScreen.style.display = 'none';
-            loadingText.textContent = '正在加载...';
-        }
-        
-        // 初始化Three.js场景
-        function initThreeJS() {
-            try {
-                if (typeof THREE === 'undefined') {
-                    showNotification("Three.js库加载失败，请刷新页面重试", 5000);
-                    return false;
-                }
-                
-                // 创建场景
-                scene = new THREE.Scene();
-                scene.background = new THREE.Color(0xf0f0f0);
-                
-                // 创建相机
-                const aspect = window.innerWidth / window.innerHeight;
-                camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1000);
-                camera.position.set(10, 8, 10);
-                camera.lookAt(0, 0, 0);
-                
-                // 创建渲染器
-                renderer = new THREE.WebGLRenderer({ 
-                    canvas: gameCanvas,
-                    antialias: true,
-                    alpha: true
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                renderer.physicallyCorrectLights = true;
-                
-                // 创建控制器
-                try {
-                    controls = new THREE.OrbitControls(camera, renderer.domElement);
-                    controls.enableDamping = true;
-                    controls.dampingFactor = 0.05;
-                    controls.minDistance = 3;
-                    controls.maxDistance = 30;
-                    controls.maxPolarAngle = Math.PI / 2;
-                    controls.enablePan = true;
-                    controls.enableZoom = true;
-                    controls.enableRotate = true;
-                } catch (error) {
-                    console.warn("轨道控制器创建失败，将使用备用相机控制:", error);
-                    createManualControls();
-                }
-                
-                // 初始化GLTFLoader
-                try {
-                    GLTFLoader = new THREE.GLTFLoader();
-                } catch (error) {
-                    console.error("GLTFLoader加载失败:", error);
-                    showNotification("模型加载器初始化失败，无法导入模型", 5000);
-                }
-                
-                // 添加光照
-                addLighting();
-                
-                // 创建房间
-                createRoom();
-                
-                // 添加坐标轴和网格辅助
-                addHelpers();
-                
-                // 处理窗口大小变化
-                window.addEventListener('resize', onWindowResize);
-                
-                // 初始化键盘控制
-                initKeyboardControls();
-                
-                // 开始动画循环
-                animate();
-                
-                return true;
-            } catch (error) {
-                console.error("Three.js场景初始化失败:", error);
-                showNotification("场景初始化失败: " + error.message, 5000);
-                return false;
-            }
-        }
-        
-        // 初始化键盘控制
-        function initKeyboardControls() {
-            document.addEventListener('keydown', (event) => {
-                const key = event.key.toLowerCase();
-                if (keyboardControls.hasOwnProperty(key)) {
-                    keyboardControls[key] = true;
-                    event.preventDefault();
-                }
-            });
+        // 静音按钮功能
+        videoMuteBtn.addEventListener('click', function() {
+            videoBackground.muted = !videoBackground.muted;
+            const icon = this.querySelector('i');
             
-            document.addEventListener('keyup', (event) => {
-                const key = event.key.toLowerCase();
-                if (keyboardControls.hasOwnProperty(key)) {
-                    keyboardControls[key] = false;
-                    event.preventDefault();
-                }
-            });
-        }
-        
-        // 处理键盘输入
-        function handleKeyboardInput() {
-            if (!camera) return;
-            
-            const moveVector = new THREE.Vector3(0, 0, 0);
-            if (keyboardControls.w) moveVector.y += moveSpeed;
-            if (keyboardControls.s) moveVector.y -= moveSpeed;
-            if (keyboardControls.a) moveVector.x -= moveSpeed;
-            if (keyboardControls.d) moveVector.x += moveSpeed;
-            if (keyboardControls.u) moveVector.z -= moveSpeed;
-            if (keyboardControls.y) moveVector.z += moveSpeed;
-            
-            if (moveVector.length() === 0) return;
-            
-            camera.position.add(moveVector);
-            if (controls && controls.target) {
-                controls.target.add(moveVector);
-            }
-            if (controls && controls.update) {
-                controls.update();
-            }
-        }
-        
-        // 备用：手动控制相机
-        function createManualControls() {
-            let isMouseDown = false;
-            let mouseX = 0;
-            let mouseY = 0;
-            let targetX = 0;
-            let targetY = 0;
-            
-            gameCanvas.addEventListener('mousedown', (e) => {
-                isMouseDown = true;
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            });
-            
-            gameCanvas.addEventListener('mousemove', (e) => {
-                if (isMouseDown && e.buttons === 1) {
-                    targetX += (e.clientX - mouseX) * 0.01;
-                    targetY += (e.clientY - mouseY) * 0.01;
-                }
-                mouseX = e.clientX;
-                mouseY = e.clientY;
-            });
-            
-            gameCanvas.addEventListener('mouseup', () => {
-                isMouseDown = false;
-            });
-            
-            gameCanvas.addEventListener('wheel', (e) => {
-                camera.position.multiplyScalar(1 - e.deltaY * 0.001);
-            });
-            
-            function updateCamera() {
-                camera.position.x = 10 + Math.sin(targetX) * 10;
-                camera.position.z = 10 + Math.cos(targetX) * 10;
-                camera.position.y = 8 + targetY * 5;
-                camera.lookAt(0, 0, 0);
-            }
-            
-            const originalAnimate = animate;
-            animate = function() {
-                updateCamera();
-                originalAnimate();
-            };
-        }
-        
-        // 添加光照
-        function addLighting() {
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambientLight);
-            lights.push(ambientLight);
-            
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 20, 5);
-            directionalLight.castShadow = true;
-            scene.add(directionalLight);
-            lights.push(directionalLight);
-            
-            const pointLight = new THREE.PointLight(0xfff8e7, 0.6, 20);
-            pointLight.position.set(0, 8, 0);
-            pointLight.castShadow = true;
-            scene.add(pointLight);
-            lights.push(pointLight);
-            
-            const fillLight = new THREE.DirectionalLight(0xfff0e0, 0.3);
-            fillLight.position.set(-10, 10, -5);
-            scene.add(fillLight);
-            lights.push(fillLight);
-        }
-        
-        // 创建房间
-        function createRoom() {
-            const roomSize = 20;
-            const wallHeight = 8;
-            
-            // 创建地板 - 使用wood.png作为贴图
-            const floorGeometry = new THREE.PlaneGeometry(roomSize, roomSize);
-            
-            // 创建纹理加载器
-            const textureLoader = new THREE.TextureLoader();
-            
-            // 加载wood.png纹理
-            const woodTexture = textureLoader.load('wood.png');
-            
-            // 设置纹理重复和平铺
-            woodTexture.wrapS = THREE.RepeatWrapping;
-            woodTexture.wrapT = THREE.RepeatWrapping;
-            woodTexture.repeat.set(roomSize/2, roomSize/2); // 根据房间大小调整纹理重复次数
-            
-            const floorMaterial = new THREE.MeshStandardMaterial({ 
-                map: woodTexture, // 使用木纹贴图
-                roughness: 0.8,
-                metalness: 0.2
-            });
-            
-            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-            floor.rotation.x = -Math.PI / 2;
-            floor.position.y = 0;
-            floor.receiveShadow = true;
-            floor.name = 'floor';
-            scene.add(floor);
-            roomObjects.push(floor);
-            console.log("地板创建完成，使用wood.png贴图");
-            
-            // 墙壁材质
-            const wallMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xF5F5DC,
-                roughness: 0.7
-            });
-            
-            // 创建四面墙
-            const wallPositions = [
-                { position: [0, wallHeight/2, -roomSize/2], rotation: [0, 0, 0], name: 'backWall' },
-                { position: [-roomSize/2, wallHeight/2, 0], rotation: [0, Math.PI/2, 0], name: 'leftWall' },
-                { position: [roomSize/2, wallHeight/2, 0], rotation: [0, -Math.PI/2, 0], name: 'rightWall' },
-                { position: [0, wallHeight/2, roomSize/2], rotation: [0, Math.PI, 0], name: 'frontWall' }
-            ];
-            
-            wallPositions.forEach(wall => {
-                const wallMesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(roomSize, wallHeight),
-                    wallMaterial
-                );
-                wallMesh.position.set(...wall.position);
-                wallMesh.rotation.y = wall.rotation[1];
-                wallMesh.receiveShadow = true;
-                wallMesh.name = wall.name;
-                scene.add(wallMesh);
-                roomObjects.push(wallMesh);
-            });
-            
-            // 天花板
-            const ceiling = new THREE.Mesh(
-                new THREE.PlaneGeometry(roomSize, roomSize),
-                wallMaterial
-            );
-            ceiling.rotation.x = Math.PI / 2;
-            ceiling.position.y = wallHeight;
-            ceiling.receiveShadow = true;
-            ceiling.name = 'ceiling';
-            scene.add(ceiling);
-            roomObjects.push(ceiling);
-            
-            console.log("墙壁和天花板创建完成");
-            
-            // 创建吊灯
-            createChandelier();
-            
-            // 创建桌子
-            createTable();
-            
-            // 创建沙发
-            createSofa();
-            
-            console.log("温馨小屋创建完成，共有" + roomObjects.length + "个物体");
-        }
-        
-        // 创建吊灯
-        function createChandelier() {
-            const chandelierGroup = new THREE.Group();
-            
-            const chainGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
-            const chainMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x888888,
-                roughness: 0.1,
-                metalness: 0.8
-            });
-            const chain = new THREE.Mesh(chainGeometry, chainMaterial);
-            chain.position.y = -0.5;
-            chandelierGroup.add(chain);
-            
-            const shadeGeometry = new THREE.ConeGeometry(0.8, 0.4, 16);
-            const shadeMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xffffff,
-                roughness: 0.3,
-                metalness: 0.1,
-                transparent: true,
-                opacity: 0.8
-            });
-            const shade = new THREE.Mesh(shadeGeometry, shadeMaterial);
-            shade.position.y = -1.2;
-            chandelierGroup.add(shade);
-            
-            const bulbGeometry = new THREE.SphereGeometry(0.2, 16, 16);
-            const bulbMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xffff00,
-                emissive: 0xffff00,
-                emissiveIntensity: 0.5
-            });
-            const bulb = new THREE.Mesh(bulbGeometry, bulbMaterial);
-            bulb.position.y = -1.2;
-            chandelierGroup.add(bulb);
-            
-            chandelierGroup.position.set(0, 7, 0);
-            chandelierGroup.traverse(child => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                }
-            });
-            
-            scene.add(chandelierGroup);
-            roomObjects.push(chandelierGroup);
-            
-            console.log("吊灯创建完成");
-        }
-        
-        // 创建桌子
-        function createTable() {
-            const tableGroup = new THREE.Group();
-            
-            const tableTopGeometry = new THREE.BoxGeometry(4, 0.2, 2);
-            const tableMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x8B4513,
-                roughness: 0.8
-            });
-            const tableTop = new THREE.Mesh(tableTopGeometry, tableMaterial);
-            tableTop.position.y = 1.6;
-            tableTop.castShadow = true;
-            tableTop.receiveShadow = true;
-            tableGroup.add(tableTop);
-            
-            const legGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1.5, 8);
-            const legPositions = [
-                { x: -1.8, z: -0.8 },
-                { x: 1.8, z: -0.8 },
-                { x: -1.8, z: 0.8 },
-                { x: 1.8, z: 0.8 }
-            ];
-            
-            legPositions.forEach(pos => {
-                const leg = new THREE.Mesh(legGeometry, tableMaterial);
-                leg.position.set(pos.x, 0.75, pos.z);
-                leg.castShadow = true;
-                tableGroup.add(leg);
-            });
-            
-            tableGroup.position.set(0, 0, 0);
-            scene.add(tableGroup);
-            roomObjects.push(tableGroup);
-            
-            console.log("桌子创建完成");
-        }
-        
-        // 创建沙发
-        function createSofa() {
-            const sofaGroup = new THREE.Group();
-            const sofaMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x8A2BE2,
-                roughness: 0.9
-            });
-            
-            const baseGeometry = new THREE.BoxGeometry(3, 1, 1.5);
-            const base = new THREE.Mesh(baseGeometry, sofaMaterial);
-            base.position.y = 0.5;
-            base.castShadow = true;
-            base.receiveShadow = true;
-            sofaGroup.add(base);
-            
-            const backGeometry = new THREE.BoxGeometry(3, 1.5, 0.3);
-            const back = new THREE.Mesh(backGeometry, sofaMaterial);
-            back.position.set(0, 1.25, -0.6);
-            back.castShadow = true;
-            sofaGroup.add(back);
-            
-            const armGeometry = new THREE.BoxGeometry(0.5, 1.2, 1.5);
-            const leftArm = new THREE.Mesh(armGeometry, sofaMaterial);
-            leftArm.position.set(-1.75, 0.6, 0);
-            leftArm.castShadow = true;
-            sofaGroup.add(leftArm);
-            
-            const rightArm = new THREE.Mesh(armGeometry, sofaMaterial);
-            rightArm.position.set(1.75, 0.6, 0);
-            rightArm.castShadow = true;
-            sofaGroup.add(rightArm);
-            
-            sofaGroup.position.set(-6, 0, 0);
-            scene.add(sofaGroup);
-            roomObjects.push(sofaGroup);
-            
-            console.log("沙发创建完成");
-        }
-        
-        // 添加坐标轴和网格辅助
-        function addHelpers() {
-            const axesHelper = new THREE.AxesHelper(5);
-            scene.add(axesHelper);
-            
-            const gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x444444);
-            gridHelper.position.y = 0.01;
-            scene.add(gridHelper);
-        }
-        
-        // 窗口大小变化处理
-        function onWindowResize() {
-            if (!camera || !renderer) return;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-        
-        // 动画循环
-        function animate() {
-            animationFrameId = requestAnimationFrame(animate);
-            handleKeyboardInput();
-            if (controls && controls.update) {
-                controls.update();
-            }
-            if (scene && camera && renderer) {
-                renderer.render(scene, camera);
-            }
-        }
-        
-        // 切换灯光
-        function toggleLights() {
-            if (lights.length === 0) return;
-            const isVisible = lights[0].visible;
-            lights.forEach(light => {
-                if (light.visible !== undefined) {
-                    light.visible = !isVisible;
-                }
-            });
-            showNotification(isVisible ? '灯光已关闭' : '灯光已开启');
-        }
-        
-        // 格式化文件大小
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // 移除文件扩展名
-        function removeFileExtension(filename) {
-            return filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-        }
-        
-        // 处理模型文件选择
-        function handleModelFileSelect(file) {
-            if (!file) return;
-            selectedFile = file;
-            modelFileName.textContent = `文件名: ${file.name}`;
-            modelFileSize.textContent = `文件大小: ${formatFileSize(file.size)}`;
-            modelFileInfo.classList.add('show');
-            showNotification(`已选择文件: ${file.name}`);
-        }
-        
-        // 加载3D模型文件
-        function loadModelFile(file) {
-            if (!GLTFLoader) {
-                showNotification('模型加载器未初始化，请重新刷新页面', 5000);
-                return;
-            }
-            
-            showLoading('正在加载3D模型...');
-            
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                try {
-                    const contents = event.target.result;
-                    GLTFLoader.parse(contents, '', function (gltf) {
-                        const model = gltf.scene;
-                        model.position.set(0, 2, 0);
-                        const box = new THREE.Box3().setFromObject(model);
-                        const size = box.getSize(new THREE.Vector3());
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 1.5 / maxDim;
-                        model.scale.setScalar(scale);
-                        model.traverse(function (node) {
-                            if (node.isMesh) {
-                                node.castShadow = true;
-                                node.receiveShadow = true;
-                            }
-                        });
-                        scene.add(model);
-                        const modelInfo = {
-                            model: model,
-                            name: file.name,
-                            displayName: removeFileExtension(file.name),
-                            importTime: new Date(),
-                            size: file.size
-                        };
-                        importedModels.push(modelInfo);
-                        updateModelsList();
-                        hideLoading();
-                        successMessage.textContent = `模型 "${modelInfo.displayName}" 已成功导入！`;
-                        successModal.classList.add('active');
-                        showNotification(`模型 "${modelInfo.displayName}" 加载成功！`);
-                    }, function (error) {
-                        hideLoading();
-                        console.error('模型加载失败:', error);
-                        showNotification(`模型加载失败: ${error.message || '未知错误'}`, 5000);
-                    });
-                } catch (error) {
-                    hideLoading();
-                    console.error('模型解析失败:', error);
-                    showNotification('模型文件格式错误，请选择有效的GLB/GLTF文件', 5000);
-                }
-            };
-            reader.onerror = function (error) {
-                hideLoading();
-                console.error('文件读取失败:', error);
-                showNotification('文件读取失败，请重试', 5000);
-            };
-            reader.readAsArrayBuffer(file);
-        }
-        
-        // 更新模型列表
-        function updateModelsList() {
-            modelsListContainer.innerHTML = '';
-            if (importedModels.length === 0) {
-                noModelsMessage.style.display = 'block';
-                modelsListContainer.appendChild(noModelsMessage);
-                return;
-            }
-            noModelsMessage.style.display = 'none';
-            importedModels.forEach((modelInfo, index) => {
-                const modelItem = document.createElement('div');
-                modelItem.className = 'model-item';
-                modelItem.dataset.index = index;
-                const time = new Date(modelInfo.importTime);
-                const timeStr = `${time.getFullYear()}-${(time.getMonth()+1).toString().padStart(2, '0')}-${time.getDate().toString().padStart(2, '0')} ${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-                modelItem.innerHTML = `
-                    <div class="model-info">
-                        <div class="model-name">${modelInfo.displayName}</div>
-                        <div class="model-time">导入时间: ${timeStr}</div>
-                    </div>
-                    <button class="delete-model-btn" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                        删除
-                    </button>
-                `;
-                modelsListContainer.appendChild(modelItem);
-            });
-            document.querySelectorAll('.delete-model-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const index = parseInt(this.dataset.index);
-                    confirmDeleteModel(index);
-                });
-            });
-        }
-        
-        // 确认删除模型
-        function confirmDeleteModel(index) {
-            if (index < 0 || index >= importedModels.length) return;
-            const modelInfo = importedModels[index];
-            modelToDeleteIndex = index;
-            modelNameToDelete.textContent = modelInfo.displayName;
-            modelsListModal.classList.remove('active');
-            confirmDeleteModal.classList.add('active');
-        }
-        
-        // 执行删除模型
-        function deleteModel() {
-            if (modelToDeleteIndex < 0 || modelToDeleteIndex >= importedModels.length) {
-                showNotification('删除失败: 模型不存在', 3000);
-                return;
-            }
-            const modelInfo = importedModels[modelToDeleteIndex];
-            scene.remove(modelInfo.model);
-            importedModels.splice(modelToDeleteIndex, 1);
-            updateModelsList();
-            confirmDeleteModal.classList.remove('active');
-            showNotification(`模型 "${modelInfo.displayName}" 已删除`, 3000);
-        }
-        
-        // 从本地存储加载保存的场景
-        function loadSavedScenes() {
-            try {
-                const savedData = localStorage.getItem('3dHeartHouseSavedScenes');
-                savedScenes = savedData ? JSON.parse(savedData) : [];
-            } catch (error) {
-                console.error("加载保存的场景失败:", error);
-                savedScenes = [];
-            }
-        }
-        
-        // 保存场景
-        function saveScene() {
-            try {
-                const sceneInfo = {
-                    id: Date.now(),
-                    mapName: currentMapName,
-                    saveName: saveSceneName.value,
-                    time: new Date().toISOString(),
-                    coverImage: coverImageURL,
-                    screenshot: renderer.domElement.toDataURL('image/png'),
-                    cameraPosition: {
-                        x: camera.position.x,
-                        y: camera.position.y,
-                        z: camera.position.z
-                    },
-                    cameraRotation: {
-                        x: camera.rotation.x,
-                        y: camera.rotation.y,
-                        z: camera.rotation.z
-                    },
-                    models: importedModels.map(model => ({
-                        name: model.name,
-                        displayName: model.displayName,
-                        position: {
-                            x: model.model.position.x,
-                            y: model.model.position.y,
-                            z: model.model.position.z
-                        },
-                        rotation: {
-                            x: model.model.rotation.x,
-                            y: model.model.rotation.y,
-                            z: model.model.rotation.z
-                        },
-                        scale: {
-                            x: model.model.scale.x,
-                            y: model.model.scale.y,
-                            z: model.model.scale.z
-                        }
-                    }))
-                };
-                savedScenes.push(sceneInfo);
-                localStorage.setItem('3dHeartHouseSavedScenes', JSON.stringify(savedScenes));
-                showNotification(`场景"${sceneInfo.saveName}"已保存到历史小屋！`);
-            } catch (error) {
-                console.error("保存场景失败:", error);
-                showNotification("保存场景失败: " + error.message, 5000);
-            }
-        }
-        
-        // 处理封面图片选择
-        function handleCoverImageSelect(file) {
-            if (!file) return;
-            coverImageFile = file;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                coverImageURL = e.target.result;
-                coverPreview.innerHTML = `<img src="${coverImageURL}" alt="封面预览">`;
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        // 切换声音
-        function toggleSound() {
-            isSoundOn = !isSoundOn;
-            soundToggleBtn.querySelector('span').textContent = `声音: ${isSoundOn ? '开' : '关'}`;
-            showNotification(`声音已${isSoundOn ? '开启' : '关闭'}`);
-        }
-        
-        // 截图功能
-        function takeScreenshot() {
-            try {
-                const dataURL = renderer.domElement.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = '3d-heart-house-screenshot.png';
-                link.href = dataURL;
-                link.click();
-                showNotification('截图已保存');
-            } catch (error) {
-                console.error('截图失败:', error);
-                showNotification('截图失败，请重试');
-            }
-        }
-        
-        // 退出游戏
-        function exitGame() {
-            window.location.href = 'index.html';
-        }
-        
-        // 页面事件监听
-        backBtn.addEventListener('click', function() {
-            window.location.href = 'index.html';
-        });
-        
-        addModelBtn.addEventListener('click', function() {
-            importModal.classList.add('active');
-            selectedFile = null;
-            modelFileInfo.classList.remove('show');
-        });
-        
-        generateModelBtn.addEventListener('click', function() {
-            generateModal.classList.add('active');
-        });
-        
-        deleteModelBtn.addEventListener('click', function() {
-            updateModelsList();
-            modelsListModal.classList.add('active');
-        });
-        
-        menuBtn.addEventListener('click', function() {
-            isMenuOpen = !isMenuOpen;
-            if (isMenuOpen) {
-                menuPanel.classList.add('active');
+            if (videoBackground.muted) {
+                icon.className = 'fas fa-volume-mute';
+                this.innerHTML = '<i class="fas fa-volume-mute"></i> 取消静音';
             } else {
-                menuPanel.classList.remove('active');
+                icon.className = 'fas fa-volume-up';
+                this.innerHTML = '<i class="fas fa-volume-up"></i> 静音';
             }
         });
         
-        toggleLightsBtn.addEventListener('click', toggleLights);
-        
-        exportSceneBtn.addEventListener('click', function() {
-            saveScene();
-        });
-        
-        soundToggleBtn.addEventListener('click', toggleSound);
-        
-        screenshotBtn.addEventListener('click', takeScreenshot);
-        
-        saveSceneBtn.addEventListener('click', function() {
-            saveSceneModal.classList.add('active');
-        });
-        
-        exitBtn.addEventListener('click', exitGame);
-        
-        // 模态窗口控制
-        closeImportModal.addEventListener('click', function() {
-            importModal.classList.remove('active');
-        });
-        
-        cancelImportBtn.addEventListener('click', function() {
-            importModal.classList.remove('active');
-        });
-        
-        confirmImportBtn.addEventListener('click', function() {
-            if (!selectedFile) {
-                showNotification('请先选择一个3D模型文件', 3000);
-                return;
-            }
-            importModal.classList.remove('active');
-            loadModelFile(selectedFile);
-        });
-        
-        closeGenerateModal.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-        });
-        
-        cancelGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-        });
-        
-        confirmGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-            showNotification('生成模型功能开发中');
-        });
-        
-        closeModelsListModal.addEventListener('click', function() {
-            modelsListModal.classList.remove('active');
-        });
-        
-        closeModelsListBtn.addEventListener('click', function() {
-            modelsListModal.classList.remove('active');
-        });
-        
-        closeConfirmDeleteModal.addEventListener('click', function() {
-            confirmDeleteModal.classList.remove('active');
-        });
-        
-        cancelConfirmDeleteBtn.addEventListener('click', function() {
-            confirmDeleteModal.classList.remove('active');
-        });
-        
-        confirmModelDeleteBtn.addEventListener('click', deleteModel);
-        
-        closeSuccessModal.addEventListener('click', function() {
-            successModal.classList.remove('active');
-        });
-        
-        closeSuccessBtn.addEventListener('click', function() {
-            successModal.classList.remove('active');
-        });
-        
-        closeSaveSceneModal.addEventListener('click', function() {
-            saveSceneModal.classList.remove('active');
-        });
-        
-        cancelSaveSceneBtn.addEventListener('click', function() {
-            saveSceneModal.classList.remove('active');
-        });
-        
-        confirmSaveSceneBtn.addEventListener('click', function() {
-            const saveName = saveSceneName.value.trim();
-            if (!saveName) {
-                showNotification('请为场景命名', 3000);
-                return;
-            }
-            saveSceneModal.classList.remove('active');
-            saveScene();
-        });
-        
-        // 模型上传区域点击事件
-        modelUploadArea.addEventListener('click', function() {
-            modelFileInput.click();
-        });
-        
-        // 图片上传区域点击事件
-        imageUploadArea.addEventListener('click', function() {
-            imageFileInput.click();
-        });
-        
-        // 文件选择事件
-        modelFileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleModelFileSelect(file);
-            }
-        });
-        
-        // 封面图片选择事件
-        saveSceneCover.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleCoverImageSelect(file);
-            }
-        });
-        
-        // 拖拽上传处理
-        modelUploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            modelUploadArea.style.backgroundColor = '#e8e4ff';
-            modelUploadArea.style.borderColor = '#7b68ee';
-        });
-        
-        modelUploadArea.addEventListener('dragleave', function() {
-            modelUploadArea.style.backgroundColor = '#f9f7ff';
-            modelUploadArea.style.borderColor = '#c5b3ff';
-        });
-        
-        modelUploadArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            modelUploadArea.style.backgroundColor = '#f9f7ff';
-            modelUploadArea.style.borderColor = '#c5b3ff';
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (ext === 'glb' || ext === 'gltf') {
-                    handleModelFileSelect(file);
-                } else {
-                    showNotification('不支持的文件格式，请选择GLB或GLTF文件', 3000);
-                }
-            }
-        });
-        
-        // 点击其他地方关闭菜单
-        document.addEventListener('click', function(e) {
-            if (isMenuOpen && !menuPanel.contains(e.target) && e.target !== menuBtn) {
-                menuPanel.classList.remove('active');
-                isMenuOpen = false;
-            }
-        });
-        
-        // 页面加载完成后初始化游戏
-        window.addEventListener('DOMContentLoaded', function() {
-            loadSavedScenes();
-            showLoading('正在初始化3D场景...');
-            updateProgress(0);
-            timeEstimate.textContent = '预计时间: 2秒';
-            
-            let progress = 0;
-            const progressInterval = setInterval(function() {
-                progress += 10;
-                updateProgress(progress);
-                timeEstimate.textContent = `预计时间: ${Math.floor((100 - progress) / 20)}秒`;
-                
-                if (progress === 20) {
-                    loadingText.textContent = '正在初始化3D引擎...';
-                } else if (progress === 40) {
-                    loadingText.textContent = '正在创建场景...';
-                } else if (progress === 60) {
-                    loadingText.textContent = '正在设置光照...';
-                } else if (progress === 80) {
-                    loadingText.textContent = '正在添加家具...';
-                } else if (progress >= 100) {
-                    clearInterval(progressInterval);
-                    setTimeout(function() {
-                        if (initThreeJS()) {
-                            hideLoading();
-                            gameContainer.style.display = 'block';
-                            showNotification('温馨小屋已加载！使用鼠标拖拽旋转视角，滚轮缩放，键盘WSADUY控制移动');
-                            keyboardControlsDiv.style.display = 'block';
-                        } else {
-                            loadingText.textContent = '加载失败，请刷新重试';
-                            setTimeout(function() {
-                                hideLoading();
-                                alert('游戏加载失败，请刷新页面重试');
-                            }, 2000);
-                        }
-                    }, 500);
-                }
-            }, 200);
-        });
-        
-        // 键盘输入处理函数
-        function handleKeyboardInput() {
-            if (!camera) return;
-            
-            const moveSpeed = 0.2;
-            const moveVector = new THREE.Vector3(0, 0, 0);
-            
-            if (keyboardControls.w) moveVector.y += moveSpeed;
-            if (keyboardControls.s) moveVector.y -= moveSpeed;
-            if (keyboardControls.a) moveVector.x -= moveSpeed;
-            if (keyboardControls.d) moveVector.x += moveSpeed;
-            if (keyboardControls.u) moveVector.z -= moveSpeed;
-            if (keyboardControls.y) moveVector.z += moveSpeed;
-            
-            if (moveVector.length() === 0) return;
-            
-            camera.position.add(moveVector);
-            if (controls && controls.target) {
-                controls.target.add(moveVector);
-            }
-            if (controls && controls.update) {
-                controls.update();
-            }
-        }
-        
-        // 动画循环
-        function animate() {
-            animationFrameId = requestAnimationFrame(animate);
-            handleKeyboardInput();
-            if (controls && controls.update) {
-                controls.update();
-            }
-            if (scene && camera && renderer) {
-                renderer.render(scene, camera);
-            }
-        }
-        
-        // 切换灯光
-        function toggleLights() {
-            if (lights.length === 0) return;
-            const isVisible = lights[0].visible;
-            lights.forEach(light => {
-                if (light.visible !== undefined) {
-                    light.visible = !isVisible;
-                }
-            });
-            showNotification(isVisible ? '灯光已关闭' : '灯光已开启');
-        }
-        
-        // 格式化文件大小
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // 移除文件扩展名
-        function removeFileExtension(filename) {
-            return filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-        }
-        
-        // 处理模型文件选择
-        function handleModelFileSelect(file) {
-            if (!file) return;
-            selectedFile = file;
-            modelFileName.textContent = `文件名: ${file.name}`;
-            modelFileSize.textContent = `文件大小: ${formatFileSize(file.size)}`;
-            modelFileInfo.classList.add('show');
-            showNotification(`已选择文件: ${file.name}`);
-        }
-        
-        // 加载3D模型文件
-        function loadModelFile(file) {
-            if (!GLTFLoader) {
-                showNotification('模型加载器未初始化，请重新刷新页面', 5000);
-                return;
-            }
-            
-            showLoading('正在加载3D模型...');
-            
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                try {
-                    const contents = event.target.result;
-                    GLTFLoader.parse(contents, '', function (gltf) {
-                        const model = gltf.scene;
-                        
-                        // 设置模型默认位置（桌子上）
-                        model.position.set(0, 2, 0);
-                        
-                        // 调整模型大小（自适应）
-                        const box = new THREE.Box3().setFromObject(model);
-                        const size = box.getSize(new THREE.Vector3());
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 1.5 / maxDim; // 缩放至合适大小
-                        model.scale.setScalar(scale);
-                        
-                        // 启用阴影
-                        model.traverse(function (node) {
-                            if (node.isMesh) {
-                                node.castShadow = true;
-                                node.receiveShadow = true;
-                            }
-                        });
-                        
-                        // 添加到场景
-                        scene.add(model);
-                        
-                        // 存储模型信息
-                        const modelInfo = {
-                            model: model,
-                            name: file.name,
-                            displayName: removeFileExtension(file.name),
-                            importTime: new Date(),
-                            size: file.size
-                        };
-                        
-                        importedModels.push(modelInfo);
-                        
-                        // 更新模型列表
-                        updateModelsList();
-                        
-                        hideLoading();
-                        successMessage.textContent = `模型 "${modelInfo.displayName}" 已成功导入！`;
-                        successModal.classList.add('active');
-                        
-                        showNotification(`模型 "${modelInfo.displayName}" 加载成功！`);
-                        console.log(`模型 ${modelInfo.displayName} 加载完成`);
-                    }, function (error) {
-                        hideLoading();
-                        console.error('模型加载失败:', error);
-                        showNotification(`模型加载失败: ${error.message || '未知错误'}`, 5000);
-                    });
-                } catch (error) {
-                    hideLoading();
-                    console.error('模型解析失败:', error);
-                    showNotification('模型文件格式错误，请选择有效的GLB/GLTF文件', 5000);
-                }
-            };
-            
-            reader.onerror = function (error) {
-                hideLoading();
-                console.error('文件读取失败:', error);
-                showNotification('文件读取失败，请重试', 5000);
-            };
-            
-            reader.onprogress = function (event) {
-                if (event.lengthComputable) {
-                    const percentLoaded = Math.round((event.loaded / event.total) * 100);
-                    loadingText.textContent = `正在加载模型: ${percentLoaded}%`;
-                }
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-        
-        // 更新模型列表
-        function updateModelsList() {
-            modelsListContainer.innerHTML = '';
-            
-            if (importedModels.length === 0) {
-                noModelsMessage.style.display = 'block';
-                modelsListContainer.appendChild(noModelsMessage);
-                return;
-            }
-            
-            noModelsMessage.style.display = 'none';
-            
-            // 添加每个模型
-            importedModels.forEach((modelInfo, index) => {
-                const modelItem = document.createElement('div');
-                modelItem.className = 'model-item';
-                modelItem.dataset.index = index;
-                
-                const time = new Date(modelInfo.importTime);
-                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-                
-                modelItem.innerHTML = `
-                    <div class="model-info">
-                        <div class="model-name">${modelInfo.displayName}</div>
-                        <div class="model-time">导入时间: ${timeStr}</div>
-                    </div>
-                    <button class="delete-model-btn" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                        删除
-                    </button>
-                `;
-                
-                modelsListContainer.appendChild(modelItem);
-            });
-            
-            // 为删除按钮添加事件监听
-            document.querySelectorAll('.delete-model-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const index = parseInt(this.dataset.index);
-                    confirmDeleteModel(index);
-                });
-            });
-        }
-        
-        // 确认删除模型
-        function confirmDeleteModel(index) {
-            if (index < 0 || index >= importedModels.length) return;
-            
-            const modelInfo = importedModels[index];
-            modelToDeleteIndex = index;
-            modelNameToDelete.textContent = modelInfo.displayName;
-            
-            // 关闭模型列表窗口，打开确认删除窗口
-            modelsListModal.classList.remove('active');
-            confirmDeleteModal.classList.add('active');
-        }
-        
-        // 执行删除模型
-        function deleteModel() {
-            if (modelToDeleteIndex < 0 || modelToDeleteIndex >= importedModels.length) {
-                showNotification('删除失败: 模型不存在', 3000);
-                return;
-            }
-            
-            const modelInfo = importedModels[modelToDeleteIndex];
-            
-            // 从场景中移除模型
-            scene.remove(modelInfo.model);
-            
-            // 从数组中移除
-            importedModels.splice(modelToDeleteIndex, 1);
-            
-            // 更新模型列表
-            updateModelsList();
-            
-            // 关闭确认删除窗口
-            confirmDeleteModal.classList.remove('active');
-            
-            // 显示成功消息
-            showNotification(`模型 "${modelInfo.displayName}" 已删除`, 3000);
-            
-            console.log(`模型 ${modelInfo.displayName} 已删除`);
-        }
-        
-        // 保存场景
-        function saveScene() {
-            try {
-                // 创建场景信息对象
-                const sceneInfo = {
-                    id: Date.now(),
-                    mapName: currentMapName,
-                    saveName: '场景保存_' + new Date().toLocaleDateString(),
-                    time: new Date().toISOString(),
-                    screenshot: renderer.domElement.toDataURL('image/png'),
-                    cameraPosition: {
-                        x: camera.position.x,
-                        y: camera.position.y,
-                        z: camera.position.z
-                    },
-                    cameraRotation: {
-                        x: camera.rotation.x,
-                        y: camera.rotation.y,
-                        z: camera.rotation.z
-                    },
-                    models: importedModels.map(model => ({
-                        name: model.name,
-                        displayName: model.displayName,
-                        position: {
-                            x: model.model.position.x,
-                            y: model.model.position.y,
-                            z: model.model.position.z
-                        },
-                        rotation: {
-                            x: model.model.rotation.x,
-                            y: model.model.rotation.y,
-                            z: model.model.rotation.z
-                        },
-                        scale: {
-                            x: model.model.scale.x,
-                            y: model.model.scale.y,
-                            z: model.model.scale.z
-                        }
-                    }))
-                };
-                
-                // 保存到本地存储
-                savedScenes.push(sceneInfo);
-                localStorage.setItem('3dHeartHouseSavedScenes', JSON.stringify(savedScenes));
-                
-                showNotification(`场景"${sceneInfo.saveName}"已保存到历史小屋！`);
-                console.log("场景保存成功:", sceneInfo);
-                
-            } catch (error) {
-                console.error("保存场景失败:", error);
-                showNotification("保存场景失败: " + error.message, 5000);
-            }
-        }
-        
-        // 处理封面图片选择
-        function handleCoverImageSelect(file) {
-            if (!file) return;
-            
-            coverImageFile = file;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                coverImageURL = e.target.result;
-                coverPreview.innerHTML = ``;
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        // 切换声音
-        function toggleSound() {
-            isSoundOn = !isSoundOn;
-            soundToggleBtn.querySelector('span').textContent = `声音: ${isSoundOn ? '开' : '关'}`;
-            showNotification(`声音已${isSoundOn ? '开启' : '关闭'}`);
-        }
-        
-        // 截图功能
-        function takeScreenshot() {
-            try {
-                const dataURL = renderer.domElement.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = '3d-heart-house-screenshot.png';
-                link.href = dataURL;
-                link.click();
-                showNotification('截图已保存');
-            } catch (error) {
-                console.error('截图失败:', error);
-                showNotification('截图失败，请重试');
-            }
-        }
-        
-        // 退出游戏
-        function exitGame() {
-            showNotification('正在退出游戏...');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 500);
-        }
-        
-        // 页面事件监听
-        backBtn.addEventListener('click', function() {
-            window.location.href = 'index.html';
-        });
-        
-        addModelBtn.addEventListener('click', function() {
-            importModal.classList.add('active');
-            selectedFile = null;
-            modelFileInfo.classList.remove('show');
-        });
-        
-        generateModelBtn.addEventListener('click', function() {
-            generateModal.classList.add('active');
-        });
-        
-        deleteModelBtn.addEventListener('click', function() {
-            updateModelsList();
-            modelsListModal.classList.add('active');
-        });
-        
-        menuBtn.addEventListener('click', function() {
-            isMenuOpen = !isMenuOpen;
-            if (isMenuOpen) {
-                menuPanel.classList.add('active');
+        // 暂停按钮功能
+        videoPauseBtn.addEventListener('click', function() {
+            if (videoBackground.paused) {
+                videoBackground.play();
+                const icon = this.querySelector('i');
+                icon.className = 'fas fa-pause';
+                this.innerHTML = '<i class="fas fa-pause"></i> 暂停';
             } else {
-                menuPanel.classList.remove('active');
+                videoBackground.pause();
+                const icon = this.querySelector('i');
+                icon.className = 'fas fa-play';
+                this.innerHTML = '<i class="fas fa-play"></i> 播放';
             }
         });
         
-        toggleLightsBtn.addEventListener('click', toggleLights);
-        
-        exportSceneBtn.addEventListener('click', saveScene);
-        
-        soundToggleBtn.addEventListener('click', toggleSound);
-        
-        screenshotBtn.addEventListener('click', takeScreenshot);
-        
-        saveSceneBtn.addEventListener('click', saveScene);
-        
-        exitBtn.addEventListener('click', exitGame);
-        
-        // 模态窗口控制
-        closeImportModal.addEventListener('click', function() {
-            importModal.classList.remove('active');
-        });
-        
-        cancelImportBtn.addEventListener('click', function() {
-            importModal.classList.remove('active');
-        });
-        
-        confirmImportBtn.addEventListener('click', function() {
-            if (!selectedFile) {
-                showNotification('请先选择一个3D模型文件', 3000);
-                return;
-            }
+        // 视频加载错误处理
+        videoBackground.addEventListener('error', function() {
+            console.error('视频加载失败，请检查background.mp4文件是否存在');
+            alert('背景视频加载失败，请确保background.mp4文件存在于同一文件夹中');
             
-            importModal.classList.remove('active');
-            loadModelFile(selectedFile);
+            // 设置备用背景
+            document.body.style.background = 'linear-gradient(135deg, #ffcfe0 0%, #ff9a9e 100%)';
+            document.querySelector('.video-overlay').style.display = 'none';
         });
         
-        closeGenerateModal.addEventListener('click', function() {
-            generateModal.classList.remove('active');
+        // 视频加载成功
+        videoBackground.addEventListener('loadeddata', function() {
+            console.log('背景视频加载成功');
         });
         
-        cancelGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
+        // 视频播放事件
+        videoBackground.addEventListener('play', function() {
+            console.log('背景视频开始播放');
         });
         
-        confirmGenerateBtn.addEventListener('click', function() {
-            generateModal.classList.remove('active');
-            showNotification('生成模型功能开发中');
+        // 菜单按钮功能
+        startGameBtn.addEventListener('click', function() {
+            window.location.href = 'game.html';
         });
         
-        closeModelsListModal.addEventListener('click', function() {
-            modelsListModal.classList.remove('active');
+        historyBtn.addEventListener('click', function() {
+            window.location.href = 'history_home.html';
         });
         
-        closeModelsListBtn.addEventListener('click', function() {
-            modelsListModal.classList.remove('active');
+        mapSelectBtn.addEventListener('click', function() {
+            alert('地图选择功能开发中，目前只支持温馨之家');
         });
         
-        closeConfirmDeleteModal.addEventListener('click', function() {
-            confirmDeleteModal.classList.remove('active');
-        });
-        
-        cancelConfirmDeleteBtn.addEventListener('click', function() {
-            confirmDeleteModal.classList.remove('active');
-        });
-        
-        confirmModelDeleteBtn.addEventListener('click', deleteModel);
-        
-        closeSuccessModal.addEventListener('click', function() {
-            successModal.classList.remove('active');
-        });
-        
-        closeSuccessBtn.addEventListener('click', function() {
-            successModal.classList.remove('active');
-        });
-        
-        closeSaveSceneModal.addEventListener('click', function() {
-            saveSceneModal.classList.remove('active');
-        });
-        
-        cancelSaveSceneBtn.addEventListener('click', function() {
-            saveSceneModal.classList.remove('active');
-        });
-        
-        confirmSaveSceneBtn.addEventListener('click', saveScene);
-        
-        // 模型上传区域点击事件
-        modelUploadArea.addEventListener('click', function() {
-            modelFileInput.click();
-        });
-        
-        // 图片上传区域点击事件
-        imageUploadArea.addEventListener('click', function() {
-            imageFileInput.click();
-        });
-        
-        // 文件选择事件
-        modelFileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleModelFileSelect(file);
-            }
-        });
-        
-        // 封面图片选择事件
-        saveSceneCover.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleCoverImageSelect(file);
-            }
-        });
-        
-        // 拖拽上传处理
-        modelUploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            modelUploadArea.style.backgroundColor = '#e8e4ff';
-            modelUploadArea.style.borderColor = '#7b68ee';
-        });
-        
-        modelUploadArea.addEventListener('dragleave', function() {
-            modelUploadArea.style.backgroundColor = '#f9f7ff';
-            modelUploadArea.style.borderColor = '#c5b3ff';
-        });
-        
-        modelUploadArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            modelUploadArea.style.backgroundColor = '#f9f7ff';
-            modelUploadArea.style.borderColor = '#c5b3ff';
-            
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                // 检查文件类型
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (ext === 'glb' || ext === 'gltf') {
-                    handleModelFileSelect(file);
-                } else {
-                    showNotification('不支持的文件格式，请选择GLB或GLTF文件', 3000);
-                }
-            }
-        });
-        
-        // 点击其他地方关闭菜单
-        document.addEventListener('click', function(e) {
-            if (isMenuOpen && !menuPanel.contains(e.target) && e.target !== menuBtn) {
-                menuPanel.classList.remove('active');
-                isMenuOpen = false;
-            }
-            
-            // 点击模态窗口外部关闭模态窗口
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (modal.classList.contains('active')) {
-                    if (e.target === modal) {
-                        modal.classList.remove('active');
-                    }
-                }
+        // 页面加载完成后初始化视频控制
+        document.addEventListener('DOMContentLoaded', function() {
+            // 尝试自动播放视频
+            videoBackground.play().catch(function(error) {
+                console.log('视频自动播放被阻止:', error);
+                // 显示播放按钮提示
+                videoPauseBtn.innerHTML = '<i class="fas fa-play"></i> 点击播放';
             });
+            
+            // 初始化静音按钮显示（默认非静音）
+            videoMuteBtn.innerHTML = '<i class="fas fa-volume-up"></i> 静音';
         });
-        
-        // 显示初始提示
-        showNotification('欢迎来到3D心动小屋！');
-        
-        console.log("3D心动小屋游戏初始化完成，等待用户操作...");
     </script>
 </body>
 </html>
