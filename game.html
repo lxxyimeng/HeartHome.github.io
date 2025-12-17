@@ -6,7 +6,7 @@
     <title>3D心动小屋 - 游戏</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- 引入分离的CSS文件 -->
-    <link rel="stylesheet href="game.css">
+    <link rel="stylesheet" href="game.css">
 </head>
 <body>
     <!-- 返回按钮 -->
@@ -162,10 +162,10 @@
                 <i class="fas fa-cloud-upload-alt"></i>
                 <p class="upload-text">点击或拖拽图片至此处上传</p>
                 <p class="upload-hint">支持JPG、PNG、WEBP格式，建议图片分辨率不低于1024x1024</p>
-                <div class="preview-container" id="image-preview-container" style="display: none;">
-                    <img id="image-preview" class="preview-image" alt="图片预览">
+                <div class="preview-container" id="image-preview-container" style="display: none; margin-top: 15px;">
+                    <img id="image-preview" class="preview-image" alt="图片预览" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
                 </div>
-                <div class="file-info" id="image-file-info" style="display: none;">
+                <div class="file-info" id="image-file-info" style="display: none; margin-top: 10px;">
                     <div class="file-name" id="image-file-name"></div>
                     <div class="file-size" id="image-file-size"></div>
                 </div>
@@ -250,7 +250,7 @@
             <div class="save-model-content">
                 <div class="save-model-preview">
                     <div class="model-preview" id="generated-model-preview">
-                        <i class="fas fa-cube"></i>
+                        <i class="fas fa-cube" style="font-size: 3rem; color: #7b68ee; margin-bottom: 10px;"></i>
                         <span>模型预览</span>
                     </div>
                 </div>
@@ -427,10 +427,11 @@
     const TRIPO_AI_CONFIG = {
         clientId: "tcli_6fb466321390414fa35ced326c1f9a7f",
         clientSecret: "tsk_WollQFUdxEZ6JJv2PNEoz3KCXo2KH4I8wXCNb0Cz_DX",
+        // Tripo AI API 端点 (根据官方文档可能需要调整)
         apiBaseUrl: "https://api.tripo3d.ai/v1",
         endpoints: {
-            generate: "/openapi/v1/t2v",
-            taskStatus: "/openapi/v1/task"  // 注意：这是假设的端点，实际需要根据Tripo AI文档调整
+            generate: "/openapi/t2v/create",  // 创建生成任务
+            taskStatus: "/openapi/task"       // 查询任务状态
         }
     };
     
@@ -465,6 +466,8 @@
     let aiGenerationInterval = null;
     let aiGenerationStartTime = null;
     let generatedModelData = null;
+    let generatedGLBData = null;
+    let aiTaskStatus = null;
     
     // 新增：从URL获取场景ID
     const urlParams = new URLSearchParams(window.location.search);
@@ -941,11 +944,11 @@
         // 设置纹理重复和平铺
         wall1Texture.wrapS = THREE.RepeatWrapping;
         wall1Texture.wrapT = THREE.RepeatWrapping;
-        wall1Texture.repeat.set(roomSize/4, wallHeight/4);
+        wall1Texture.repeat.set(roomSize/5, wallHeight/4);
         
         wall2Texture.wrapS = THREE.RepeatWrapping;
         wall2Texture.wrapT = THREE.RepeatWrapping;
-        wall2Texture.repeat.set(roomSize/4, wallHeight/4);
+        wall2Texture.repeat.set(roomSize/20, wallHeight/8);
         
         // 前墙和后墙使用wall1.png贴图
         const wall1Material = new THREE.MeshStandardMaterial({ 
@@ -1822,6 +1825,7 @@
             showLoading(`正在加载场景: ${sceneData.saveName}...`);
             
             // 清除当前所有模型
+            // 清除当前所有模型
             importedModels.forEach(modelInfo => {
                 scene.remove(modelInfo.model);
             });
@@ -1965,17 +1969,169 @@
             // 更新进度状态
             updateAIGenerationProgress(5, '正在上传图片到Tripo AI...');
             
-            // 模拟API调用 - 实际使用时需要替换为真实的Tripo AI API调用
-            // 这里使用模拟数据演示流程
-            aiGenerationTaskId = 'simulated_task_' + Date.now();
-            
-            // 开始轮询任务状态
-            pollAIGenerationStatus();
+            // 调用Tripo AI API生成3D模型
+            await callTripoAIGenerate();
             
         } catch (error) {
             console.error('AI生成初始化失败:', error);
             updateAIGenerationProgress(0, 'AI生成初始化失败: ' + error.message);
             showNotification('AI生成启动失败，请重试', 5000);
+        }
+    }
+    
+    // 调用Tripo AI API生成3D模型
+    async function callTripoAIGenerate() {
+        try {
+            // 创建FormData对象
+            const formData = new FormData();
+            formData.append('image', selectedImageFile);
+            
+            // 设置请求头
+            const headers = {
+                'Authorization': `Bearer ${TRIPO_AI_CONFIG.clientSecret}`,
+                'X-Client-Id': TRIPO_AI_CONFIG.clientId
+            };
+            
+            // 第一步：上传图片并创建生成任务
+            updateAIGenerationProgress(10, '正在上传图片...');
+            
+            const createResponse = await fetch(`${TRIPO_AI_CONFIG.apiBaseUrl}${TRIPO_AI_CONFIG.endpoints.generate}`, {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+            
+            if (!createResponse.ok) {
+                throw new Error(`API请求失败: ${createResponse.status}`);
+            }
+            
+            const createResult = await createResponse.json();
+            
+            if (!createResult.success) {
+                throw new Error(createResult.message || '创建生成任务失败');
+            }
+            
+            // 获取任务ID
+            aiGenerationTaskId = createResult.data.task_id;
+            updateAIGenerationProgress(20, '任务已创建，开始处理图片...');
+            
+            // 开始轮询任务状态
+            startPollingTaskStatus();
+            
+        } catch (error) {
+            console.error('调用Tripo AI API失败:', error);
+            throw error;
+        }
+    }
+    
+    // 开始轮询任务状态
+    async function startPollingTaskStatus() {
+        if (!aiGenerationTaskId) {
+            showNotification('任务ID不存在，无法查询状态', 3000);
+            return;
+        }
+        
+        // 开始轮询
+        pollTaskStatus();
+    }
+    
+    // 轮询任务状态
+    async function pollTaskStatus() {
+        if (!aiGenerationTaskId) return;
+        
+        const headers = {
+            'Authorization': `Bearer ${TRIPO_AI_CONFIG.clientSecret}`,
+            'X-Client-Id': TRIPO_AI_CONFIG.clientId
+        };
+        
+        try {
+            // 查询任务状态
+            const statusResponse = await fetch(
+                `${TRIPO_AI_CONFIG.apiBaseUrl}${TRIPO_AI_CONFIG.endpoints.taskStatus}/${aiGenerationTaskId}`,
+                { headers }
+            );
+            
+            if (!statusResponse.ok) {
+                throw new Error(`状态查询失败: ${statusResponse.status}`);
+            }
+            
+            const statusResult = await statusResponse.json();
+            
+            if (!statusResult.success) {
+                throw new Error(statusResult.message || '查询任务状态失败');
+            }
+            
+            const taskData = statusResult.data;
+            aiTaskStatus = taskData.status;
+            
+            // 根据状态更新进度
+            switch (taskData.status) {
+                case 'pending':
+                    updateAIGenerationProgress(30, '任务排队中，请稍候...');
+                    break;
+                case 'processing':
+                    updateAIGenerationProgress(50, 'AI正在处理图片，生成3D模型...');
+                    break;
+                case 'completed':
+                    updateAIGenerationProgress(80, '3D模型生成完成，正在下载...');
+                    // 获取生成的模型
+                    await downloadGeneratedModel(taskData);
+                    return;
+                case 'failed':
+                    updateAIGenerationProgress(0, 'AI生成失败: ' + (taskData.error || '未知错误'));
+                    showNotification('AI生成失败，请重试', 5000);
+                    return;
+                default:
+                    updateAIGenerationProgress(40, 'AI处理中...');
+            }
+            
+            // 继续轮询，直到完成或失败
+            if (taskData.status === 'pending' || taskData.status === 'processing') {
+                setTimeout(pollTaskStatus, 3000); // 3秒后再次查询
+            }
+            
+        } catch (error) {
+            console.error('轮询任务状态失败:', error);
+            updateAIGenerationProgress(0, '状态查询失败: ' + error.message);
+            
+            // 尝试重新轮询
+            setTimeout(pollTaskStatus, 5000);
+        }
+    }
+    
+    // 下载生成的模型
+    async function downloadGeneratedModel(taskData) {
+        try {
+            updateAIGenerationProgress(90, '正在获取生成的3D模型文件...');
+            
+            // 假设API返回模型文件的URL
+            const modelUrl = taskData.model_url;
+            
+            if (!modelUrl) {
+                throw new Error('模型URL不存在');
+            }
+            
+            // 下载GLB文件
+            const response = await fetch(modelUrl);
+            if (!response.ok) {
+                throw new Error('下载模型失败');
+            }
+            
+            const glbData = await response.arrayBuffer();
+            generatedGLBData = glbData;
+            
+            updateAIGenerationProgress(100, '3D模型生成完成！');
+            
+            // 显示保存模型弹窗
+            setTimeout(() => {
+                aiGenerationModal.classList.remove('active');
+                showSaveGeneratedModelModal();
+            }, 1000);
+            
+        } catch (error) {
+            console.error('下载生成模型失败:', error);
+            updateAIGenerationProgress(0, '下载模型失败: ' + error.message);
+            showNotification('下载生成模型失败，请重试', 5000);
         }
     }
     
@@ -2008,6 +2164,8 @@
         aiGenerationTaskId = null;
         aiGenerationStartTime = null;
         generatedModelData = null;
+        generatedGLBData = null;
+        aiTaskStatus = null;
     }
     
     // 更新AI生成进度
@@ -2045,92 +2203,22 @@
         }
     }
     
-    // 轮询AI生成状态
-    function pollAIGenerationStatus() {
-        // 模拟API轮询
-        let progress = 5;
-        let stages = [
-            { progress: 10, message: '图片上传完成，正在分析图片内容...' },
-            { progress: 20, message: '图片分析完成，正在提取3D结构信息...' },
-            { progress: 30, message: '3D结构提取完成，正在生成几何体...' },
-            { progress: 45, message: '几何体生成完成，正在优化网格...' },
-            { progress: 60, message: '网格优化完成，正在生成纹理贴图...' },
-            { progress: 75, message: '纹理贴图生成完成，正在优化材质...' },
-            { progress: 85, message: '材质优化完成，正在生成最终3D模型...' },
-            { progress: 95, message: '3D模型生成完成，正在准备下载...' },
-            { progress: 100, message: 'AI生成完成！模型已准备好' }
-        ];
-        
-        aiGenerationInterval = setInterval(() => {
-            if (stages.length > 0) {
-                const stage = stages.shift();
-                progress = stage.progress;
-                updateAIGenerationProgress(progress, stage.message);
-                
-                if (progress >= 100) {
-                    clearInterval(aiGenerationInterval);
-                    aiGenerationComplete();
-                }
-            }
-        }, 3000); // 每3秒更新一次进度
-    }
-    
-    // AI生成完成
-    function aiGenerationComplete() {
-        updateAIGenerationProgress(100, 'AI生成完成！模型已准备好');
-        
-        // 创建模拟的GLB模型数据
-        createMockGLBModel();
-        
-        // 显示保存模型弹窗
-        setTimeout(() => {
-            aiGenerationModal.classList.remove('active');
-            showSaveGeneratedModelModal();
-        }, 2000);
-    }
-    
-    // 创建模拟的GLB模型数据
-    function createMockGLBModel() {
-        // 创建一个简单的立方体作为模拟模型
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshStandardMaterial({ 
-            color: 0x7b68ee,
-            roughness: 0.8,
-            metalness: 0.2
-        });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.castShadow = true;
-        cube.receiveShadow = true;
-        
-        // 将Three.js对象转换为GLB格式的模拟数据
-        // 注意：这里只是模拟，实际应该从API获取真实的GLB文件
-        const mockModel = {
-            scene: cube,
-            name: 'ai_generated_model_' + Date.now() + '.glb',
-            displayName: 'AI生成模型_' + new Date().toLocaleTimeString(),
-            size: 1024 * 50, // 模拟50KB大小
-            generateTime: new Date()
-        };
-        
-        generatedModelData = mockModel;
-    }
-    
     // 显示保存生成模型弹窗
     function showSaveGeneratedModelModal() {
-        if (!generatedModelData) {
+        if (!generatedGLBData) {
             showNotification('模型数据不存在，生成失败', 3000);
             return;
         }
         
         // 更新模型信息
         if (generatedModelName) {
-            generatedModelName.value = generatedModelData.displayName;
+            generatedModelName.value = `AI生成模型_${new Date().toLocaleTimeString().replace(/:/g, '-')}`;
         }
         if (generatedModelSize) {
-            generatedModelSize.textContent = formatFileSize(generatedModelData.size);
+            generatedModelSize.textContent = formatFileSize(generatedGLBData.byteLength);
         }
         if (generatedModelTime) {
-            generatedModelTime.textContent = generatedModelData.generateTime.toLocaleTimeString();
+            generatedModelTime.textContent = new Date().toLocaleTimeString();
         }
         
         // 显示弹窗
@@ -2139,24 +2227,20 @@
     
     // 保存生成的模型到本地
     function saveGeneratedModelToLocal() {
-        if (!generatedModelData) {
+        if (!generatedGLBData) {
             showNotification('没有可保存的模型数据', 3000);
             return;
         }
         
         try {
-            // 创建模拟的GLB文件数据
-            // 注意：这里创建的是一个空的二进制数据，实际应该使用从API获取的GLB文件
-            const glbData = new ArrayBuffer(1024); // 模拟1KB的GLB文件
-            
             // 创建Blob对象
-            const blob = new Blob([glbData], { type: 'model/gltf-binary' });
+            const blob = new Blob([generatedGLBData], { type: 'model/gltf-binary' });
             
             // 创建下载链接
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = generatedModelName.value || 'ai_generated_model.glb';
+            link.download = generatedModelName.value.endsWith('.glb') ? generatedModelName.value : `${generatedModelName.value}.glb`;
             
             // 触发下载
             document.body.appendChild(link);
@@ -2181,47 +2265,26 @@
     
     // 加载生成的模型到场景
     function loadGeneratedModelToScene() {
-        if (!generatedModelData) {
+        if (!generatedGLBData) {
             showNotification('没有可加载的模型数据', 3000);
             return;
         }
         
         try {
-            // 从模拟数据创建模型
-            const model = generatedModelData.scene.clone();
+            // 生成文件名
+            const fileName = generatedModelName.value.endsWith('.glb') ? generatedModelName.value : `${generatedModelName.value}.glb`;
             
-            // 设置模型位置和缩放
-            model.position.set(0, 2, 0);
-            const box = new THREE.Box3().setFromObject(model);
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 1.5 / maxDim;
-            model.scale.setScalar(scale);
+            // 创建File对象
+            const file = new File([generatedGLBData], fileName, { 
+                type: 'model/gltf-binary',
+                lastModified: Date.now()
+            });
             
-            // 添加到场景
-            scene.add(model);
-            
-            // 添加到模型列表
-            const modelInfo = {
-                model: model,
-                name: generatedModelData.name,
-                displayName: generatedModelName.value || generatedModelData.displayName,
-                importTime: new Date(),
-                size: generatedModelData.size
-            };
-            
-            importedModels.push(modelInfo);
-            updateModelsList();
-            updateSelectModelsList();
-            
-            // 显示成功消息
-            successMessage.textContent = `AI生成模型 "${modelInfo.displayName}" 已成功加载到场景！`;
-            successModal.classList.add('active');
+            // 加载模型
+            loadModelFile(file);
             
             // 关闭弹窗
             saveGeneratedModelModal.classList.remove('active');
-            
-            showNotification(`AI生成模型 "${modelInfo.displayName}" 已添加到场景`);
             
         } catch (error) {
             console.error('加载模型到场景失败:', error);
@@ -2644,3 +2707,5 @@
 </script>
 </body>
 </html>
+
+
